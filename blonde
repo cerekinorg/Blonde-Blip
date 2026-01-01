@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+"""
+Blonde CLI Entry Point
+
+New unified entry point that replaces 'blnd' with 'blonde'
+"""
+
+import sys
+from pathlib import Path
+
+# Add the project root to Python path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+
+# Import and run the CLI
+from tui.cli import app
+
+if __name__ == "__main__":
+    # Check for first-time setup
+    from pathlib import Path
+    config_path = Path.home() / ".blonde" / "config.json"
+
+    if not config_path.exists():
+        from tui.setup_wizard import run_wizard
+        run_wizard()
+    else:
+        # Check for migration needed
+        from tui.config_migration import check_migration_needed
+        if check_migration_needed():
+            from tui.config_migration import run_migration
+            run_migration()
+
+    # Run the app
+    app()
