@@ -255,13 +255,13 @@ Help is always available within Blonde CLI:
   /help commands            # All available commands
 
 [bold]Online Resources:[/bold]
-  • Documentation: https://docs.blonde.dev
+  • Documentation: https://github.com/cerekinorg/Blonde-Blip#readme
   • GitHub Issues: https://github.com/blonde-team/blonde-cli/issues
   • Community Discord: https://discord.gg/blonde
 
 [bold]Still Stuck?[/bold]
   1. Try the tutorial again: blonde --tutorial
-  2. Check documentation: https://docs.blonde.dev
+  2. Check documentation: https://github.com/cerekinorg/Blonde-Blip#readme
   3. Ask in Discord community""",
 
             title=f"[cyan]Lesson 5/{self.total_lessons}[/cyan]",
@@ -295,7 +295,7 @@ You've learned the basics of Blonde CLI!
 [bold]Next Steps:[/bold]
 1. Start chatting: blonde chat
 2. Explore commands: blonde --help
-3. Read documentation: https://docs.blonde.dev
+3. Read documentation: https://github.com/cerekinorg/Blonde-Blip#readme
 4. Try agent collaboration: /team collab
 
 [bold]Remember:[/bold]

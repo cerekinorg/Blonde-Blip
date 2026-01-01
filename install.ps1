@@ -1,12 +1,12 @@
 # Blonde CLI Installer for Windows PowerShell
-# Usage: irm https://blonde.dev/install.ps1 | iex
+# Usage: irm https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 
 $BLONDE_VERSION = "1.0.0"
 $INSTALL_DIR = "$env:USERPROFILE\.blonde"
 $VENV_DIR = "$INSTALL_DIR\venv"
-$REPO_URL = "https://github.com/blonde-team/blonde-cli.git"
+$REPO_URL = "https://github.com/cerekinorg/Blonde-Blip.git"
 $REPO_DIR = "$INSTALL_DIR\repo"
 
 function Write-ColorOutput {
@@ -236,7 +236,7 @@ function Show-SuccessMessage {
     Write-Host ""
     Write-ColorOutput "  blonde" "Green"
     Write-Host ""
-    Write-Info "Documentation: https://blonde.dev/docs"
+    Write-Info "Documentation: https://github.com/cerekinorg/Blonde-Blip#readme"
     Write-Host ""
     Write-ColorOutput "═══════════════════════════════════════════════════" "Cyan"
     Write-Host ""

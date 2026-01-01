@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Blonde CLI Installer for Unix/Linux/macOS
-# Usage: curl -fsSL https://blonde.dev/install | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.sh | bash
 
 set -e
 
@@ -9,7 +9,7 @@ BLONDE_VERSION="1.0.0"
 INSTALL_DIR="${HOME}/.blonde"
 VENV_DIR="${INSTALL_DIR}/venv"
 BIN_DIR="${HOME}/.local/bin"
-REPO_URL="https://github.com/blonde-team/blonde-cli.git"
+REPO_URL="https://github.com/cerekinorg/Blonde-Blip.git"
 REPO_DIR="${INSTALL_DIR}/repo"
 
 # Colors for output
@@ -226,7 +226,7 @@ print_success_message() {
     echo ""
     echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
     echo ""
-    print_info "Documentation: https://blonde.dev/docs"
+    print_info "Documentation: https://github.com/cerekinorg/Blonde-Blip#readme"
     echo ""
     print_msg "═══════════════════════════════════════════════════" "${BLUE}"
     echo ""

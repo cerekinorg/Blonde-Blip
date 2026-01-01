@@ -7,7 +7,7 @@
 
 **Privacy-First Multi-Agent AI Development Assistant**
 
-[Build Better Code, Privately.](https://github.com/your-repo/blonde-cli)
+[Build Better Code, Privately.](https://github.com/cerekinorg/Blonde-Blip)
 
 ---
 
@@ -332,7 +332,7 @@ You: /team improve Add advanced features
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/blonde-cli.git
+git clone https://github.com/cerekinorg/Blonde-Blip.git
 cd blonde-cli
 
 # Install dependencies
@@ -638,7 +638,7 @@ blnd provider switch anthropic # For power
 
 If Blonde CLI helps you build better code, please star us!
 
-[https://github.com/your-repo/blonde-cli](https://github.com/your-repo/blonde-cli)
+[https://github.com/cerekinorg/Blonde-Blip](https://github.com/cerekinorg/Blonde-Blip)
 
 ### 📖 Explore Documentation
 

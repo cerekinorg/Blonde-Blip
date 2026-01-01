@@ -24,7 +24,7 @@
 The easiest way to install Blonde CLI:
 
 ```bash
-curl -fsSL https://blonde.dev/install | bash
+curl -fsSL https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.sh | bash
 ```
 
 Or use your preferred package manager:
@@ -59,7 +59,7 @@ That's it! Run `blonde` to get started.
 ### Step 1: Install (30 seconds)
 
 ```bash
-curl -fsSL https://blonde.dev/install | bash
+curl -fsSL https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.sh | bash
 ```
 
 ### Step 2: Setup (2 minutes)
@@ -125,7 +125,7 @@ You: /team collab Build a user authentication system
 
 **Blip** is your animated guide who explains everything:
 
-![Blip Mascot](https://blonde.dev/images/blip.png)
+![Blip Mascot](https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/images/blip.png)
 
 **What Blip does:**
 - ✨ Explains what's happening in real-time
@@ -224,7 +224,7 @@ Interactive tutorial covering:
 ### **Quick Install (Recommended)**
 
 ```bash
-curl -fsSL https://blonde.dev/install | bash
+curl -fsSL https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.sh | bash
 ```
 
 ### **Alternative Installation Methods**
@@ -263,7 +263,7 @@ pip install -r requirements.txt
 <summary>macOS</summary>
 
 ```bash
-curl -fsSL https://blonde.dev/install | bash
+curl -fsSL https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.sh | bash
 # or
 brew install blonde-cli
 ```
@@ -273,7 +273,7 @@ brew install blonde-cli
 <summary>Linux</summary>
 
 ```bash
-curl -fsSL https://blonde.dev/install | bash
+curl -fsSL https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.sh | bash
 # or
 sudo apt-get install blonde-cli  # (coming soon)
 ```
@@ -283,7 +283,7 @@ sudo apt-get install blonde-cli  # (coming soon)
 <summary>Windows</summary>
 
 ```powershell
-irm https://blonde.dev/install.ps1 | iex
+irm https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.ps1 | iex
 # or
 npm install -g blonde-cli
 ```
@@ -393,7 +393,7 @@ Built with:
 
 ```bash
 # Install
-curl -fsSL https://blonde.dev/install | bash
+curl -fsSL https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.sh | bash
 
 # Run
 blonde
@@ -408,7 +408,7 @@ blonde chat
 
 **Blonde CLI: Where AI Agents Collaborate to Build Better Code, Privately.** 🚀🔒
 
-[GitHub](https://github.com/blonde-team/blonde-cli) • [Documentation](https://docs.blonde.dev) • [Discord](https://discord.gg/blonde) • [Issues](https://github.com/blonde-team/blonde-cli/issues)
+[GitHub](https://github.com/cerekinorg/Blonde-Blip) • [Documentation](https://github.com/cerekinorg/Blonde-Blip#readme) • [Issues](https://github.com/cerekinorg/Blonde-Blip/issues)
 
 ### ⭐ Star us on GitHub!
 
