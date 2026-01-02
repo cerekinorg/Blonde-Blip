@@ -87,6 +87,21 @@ except Exception:
 console = Console()
 app = typer.Typer()
 load_dotenv()
+
+# Add callback to launch dashboard by default (like OpenCode)
+@app.callback()
+def main_callback(ctx: typer.Context, no_tui: bool = False):
+    """
+    Blonde CLI - Privacy-First Multi-Agent AI Development Assistant
+
+    When run without arguments, launches Dashboard TUI.
+    Use --no-tui to skip TUI and use CLI mode.
+    """
+    # If no subcommand provided and not explicitly disabling TUI, launch dashboard
+    if ctx.invoked_subcommand is None and not no_tui:
+        from tui.main_tui import launch_dashboard
+        launch_dashboard()
+
 logging.basicConfig(filename=str(Path.home() / ".blonde/debug.log"), level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("blonde")
 
@@ -1577,16 +1592,9 @@ def generate_tests_cmd(
     if not ADVANCED_FEATURES_AVAILABLE:
         console.print("[red]Advanced features not available. Install dependencies.[/red]")
         return
-    
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    model = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
-    
-    if not api_key:
-        console.print("[red]Error: OPENROUTER_API_KEY not set[/red]")
-        return
-    
+
     from models.openrouter import OpenRouterAdapter
-    llm_adapter = OpenRouterAdapter(api_key, model)
+    llm_adapter = OpenRouterAdapter(debug=debug)
     
     generator = TestGenerator(llm_adapter)
     test_suite = generator.generate_tests_for_file(file_path, output)
@@ -1603,36 +1611,9 @@ def lint_cmd(
     if not ADVANCED_FEATURES_AVAILABLE:
         console.print("[red]Advanced features not available. Install dependencies.[/red]")
         return
-    
-    integrator = LintingIntegrator(Path(file_path).parent)
-    issues = integrator.lint_file(file_path)
-    
-    console.print(f"\n[bold cyan]Found {len(issues)} issues:[/bold cyan]\n")
-    
-    for issue in issues[:10]:
-        severity_color = {"error": "red", "warning": "yellow", "info": "blue"}.get(issue.severity, "white")
-        console.print(f"  [{severity_color}]{issue.severity}[/] {Path(issue.file_path).name}:{issue.line_number}")
-        console.print(f"    [dim]{issue.message}[/dim]\n")
 
-
-@app.command()
-def review_cmd(
-    file_path: str = typer.Argument(..., help="File to review")
-):
-    """Perform AI-powered code review"""
-    if not ADVANCED_FEATURES_AVAILABLE:
-        console.print("[red]Advanced features not available. Install dependencies.[/red]")
-        return
-    
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    model = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
-    
-    if not api_key:
-        console.print("[red]Error: OPENROUTER_API_KEY not set[/red]")
-        return
-    
     from models.openrouter import OpenRouterAdapter
-    llm_adapter = OpenRouterAdapter(api_key, model)
+    llm_adapter = OpenRouterAdapter(debug=debug)
     
     reviewer = AIReviewer(llm_adapter)
     review = reviewer.review_file(file_path)
@@ -1801,7 +1782,7 @@ def dev_team(
         return
     
     from models.openrouter import OpenRouterAdapter
-    llm_adapter = OpenRouterAdapter(api_key, model)
+    llm_adapter = OpenRouterAdapter(debug=debug)
     
     from tui.dev_team import DevelopmentTeam
     team = DevelopmentTeam(llm_adapter)
@@ -1842,16 +1823,9 @@ def agent_task(
         return
     
     # Get LLM adapter
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    model = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
-    
-    if not api_key:
-        console.print("[red]OPENROUTER_API_KEY not set[/red]")
-        return
-    
     from models.openrouter import OpenRouterAdapter
-    llm_adapter = OpenRouterAdapter(api_key, model)
-    
+    llm_adapter = OpenRouterAdapter(debug=debug)
+
     console.print(Panel(f"Executing task with {'parallel' if parallel else 'sequential'} agents", style="bold cyan"))
     
     if blip:

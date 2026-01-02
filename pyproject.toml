@@ -81,7 +81,7 @@ Repository = "https://github.com/cerekinorg/Blonde-Blip"
 Changelog = "https://github.com/cerekinorg/Blonde-Blip/blob/main/CHANGELOG.md"
 
 [project.scripts]
-blonde = "tui.cli:app"
+blonde = "tui.__main__:main"
 
 [tool.setuptools]
 packages = ["tui", "models"]

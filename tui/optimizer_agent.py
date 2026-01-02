@@ -62,7 +62,8 @@ class OptimizerAgent:
     working efficiently and producing high-quality output.
     """
 
-    def __init__(self):
+    def __init__(self, llm_adapter=None):
+        self.llm = llm_adapter
         self.agent_work: Dict[str, List[AgentWorkItem]] = {}
         self.optimization_rules = self._load_optimization_rules()
         self.quality_metrics = {}
