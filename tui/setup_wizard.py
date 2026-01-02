@@ -260,52 +260,64 @@ class SetupWizard:
 
         console.print("Available models for this provider:")
         console.print()
-
+        
         if provider_key == "openrouter":
             models = [
                 ("1", "openai/gpt-oss-20b:free", "Free, GPT-level quality"),
                 ("2", "openai/gpt-4-turbo", "Best quality, paid"),
                 ("3", "anthropic/claude-3-opus", "Excellent reasoning, paid"),
-                ("4", "meta-llama/llama-3-70b-instruct", "Fast, affordable")
+                ("4", "meta-llama/llama-3-70b-instruct", "Fast, affordable"),
+                ("5", "custom", "Enter custom model name")
             ]
         elif provider_key == "openai":
             models = [
                 ("1", "gpt-4", "Best quality"),
                 ("2", "gpt-4-turbo", "Faster, almost as good"),
-                ("3", "gpt-3.5-turbo", "Fast and affordable")
+                ("3", "gpt-3.5-turbo", "Fast and affordable"),
+                ("4", "custom", "Enter custom model name")
             ]
         elif provider_key == "anthropic":
             models = [
                 ("1", "claude-3-opus-20240229", "Best quality"),
                 ("2", "claude-3-sonnet-20240229", "Balanced"),
-                ("3", "claude-3-haiku-20240307", "Fastest")
+                ("3", "claude-3-haiku-20240307", "Fastest"),
+                ("4", "custom", "Enter custom model name")
             ]
         else:
             models = []
-
+        
         table = Table(show_header=True, header_style="bold cyan")
         table.add_column("Choice", width=8)
         table.add_column("Model", width=30)
         table.add_column("Description", width=30)
-
+        
         for choice, model, desc in models:
             table.add_row(choice, model, desc)
-
+        
         console.print(table)
         console.print()
-
+        
         while True:
-            choice = Prompt.ask("Select a model")
-
+            choice = Prompt.ask("Select a model (or type 'custom' for any model)")
+            
             for c, model, desc in models:
                 if choice == c or choice == model:
-                    self.config["model"] = model
-                    self.config["providers"][provider_key]["model"] = model
-                    console.print()
-                    blip.happy(f"Selected: {model}")
-                    console.print()
-                    return
-
+                    if model.lower() == "custom":
+                        custom_model = Prompt.ask("Enter custom model name", default="openai/gpt-4-turbo")
+                        self.config["model"] = custom_model
+                        self.config["providers"][provider_key]["model"] = custom_model
+                        console.print()
+                        blip.happy(f"Selected: {custom_model}")
+                        console.print()
+                        return
+                    else:
+                        self.config["model"] = model
+                        self.config["providers"][provider_key]["model"] = model
+                        console.print()
+                        blip.happy(f"Selected: {model}")
+                        console.print()
+                        return
+            
             console.print("[red]Invalid choice. Please try again.[/red]")
 
     def test_connection(self):
