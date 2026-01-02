@@ -330,6 +330,17 @@ You: /team improve Add advanced features
 
 ### 1. Installation
 
+**Linux / macOS**
+```bash
+curl -fsSL https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.sh | bash
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://raw.githubusercontent.com/cerekinorg/Blonde-Blip/main/install.ps1 | iex
+```
+
+**Manual Installation**
 ```bash
 # Clone repository
 git clone https://github.com/cerekinorg/Blonde-Blip.git
