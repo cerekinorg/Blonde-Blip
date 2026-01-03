@@ -1,185 +1,99 @@
 """
-Blip - The Blonde CLI Mascot
+Blip - The Blonde CLI Mascot (Refactored for Character System)
 
-A friendly blob character that helps guide users through Blonde CLI.
+A friendly character that helps guide users through Blonde CLI.
 Blip shows different emotions and states through animations.
+
+This file now uses the BlipManager system for character switching
+while maintaining backward compatibility with existing code.
 """
 
-from rich.console import Console
-from rich.panel import Panel
-from rich.text import Text
+from pathlib import Path
 from typing import Optional
 import time
-import random
 
-console = Console()
+# Import the character management system
+try:
+    from tui.blip_manager import BlipManager, get_blip_manager
+    BLIP_MANAGER_AVAILABLE = True
+except ImportError:
+    BLIP_MANAGER_AVAILABLE = False
+    print("Warning: BlipManager not available, using fallback")
 
 
 class Blip:
     """
     Blip is the friendly mascot of Blonde CLI.
+    This class wraps the BlipManager for backward compatibility.
+    
     It shows different states and emotions through ASCII art animations.
+    Multiple characters are supported: axolotl, wisp, inkling, sprout.
     """
 
-    # ASCII art for different Blip states
-    STATES = {
-        "idle": [
-            """
-    (• ◡•)
-     /   \\
-    /_____\\
-     """,
-            """
-    (• ○•)
-     /   \\
-    /_____\\
-     """,
-            """
-    (• ◡•)
-     /   \\
-    /_____\\
-     """
-        ],
-        "happy": [
-            """
-    (◕‿◕)
-     /   \\
-    /_____\\
-    ~~~~~
-    """
-        ],
-        "excited": [
-            """
-    (⌐■_■)
-     /   \\
-    /_____\\
-    ~~~~~!
-    """,
-            """
-    (⌐■_■)
-     /   \\
-    /_____\\
-    ~!!~~
-            """
-        ],
-        "thinking": [
-            """
-    (•_•)?
-     /   \\
-    /_____\\
-     """,
-            """
-    (•_•)
-     /   \\
-    /_____\\
-    ~~~
-            """,
-            """
-    (•_•)...
-     /   \\
-    /_____\\
-            """
-        ],
-        "working": [
-            """
-    (•_•)
-     /   \\
-    /_____\\
-    ~[ ]~~
-            """,
-            """
-    (•_•)
-     /   \\
-    /_____\\
-    ~[=]~~
-            """,
-            """
-    (•_•)
-     /   \\
-    /_____\\
-    ~[#]~~
-            """
-        ],
-        "confused": [
-            """
-    (O_O)
-     /   \\
-    /_____\\
-     ???
-            """
-        ],
-        "error": [
-            """
-    (x_x)
-     /   \\
-    /_____\\
-    !!!!
-            """
-        ],
-        "success": [
-            """
-    (⌐■_■)
-     /   \\
-    /_____\\
-    ✓✓✓
-            """
-        ],
-        "love": [
-            """
-    (♥_♥)
-     /   \\
-    /_____\\
-    <3 <3
-            """
-        ],
-        "surprised": [
-            """
-    (O_O)
-     /   \\
-    /_____\\
-     !!!
-            """
-        ]
-    }
-
-    # Color schemes for different states
-    COLORS = {
-        "idle": "bright_cyan",
-        "happy": "bright_green",
-        "excited": "bright_yellow",
-        "thinking": "bright_blue",
-        "working": "bright_magenta",
-        "confused": "yellow",
-        "error": "bright_red",
-        "success": "bright_green",
-        "love": "bright_red",
-        "surprised": "bright_yellow"
-    }
-
-    def __init__(self):
-        self.current_state = "idle"
-        self.animation_frame = 0
-        self.message_queue = []
+    def __init__(self, config_path: Optional[Path] = None):
+        """
+        Initialize Blip with optional config path
+        
+        Args:
+            config_path: Path to config file for character preferences
+        """
+        if BLIP_MANAGER_AVAILABLE:
+            self.manager = get_blip_manager()
+        else:
+            # Fallback if manager not available
+            self.manager = None
+            self.current_state = "idle"
+            self.animation_frame = 0
+    
+    def get_character_name(self) -> str:
+        """Get the name of the current character"""
+        if self.manager:
+            return self.manager.current_character_name
+        return "axolotl"
+    
+    def get_character_info(self):
+        """Get information about the current character"""
+        if self.manager:
+            return self.manager.get_character_info()
+        return None
+    
+    def switch_character(self, character_name: str) -> bool:
+        """Switch to a different character"""
+        if self.manager:
+            return self.manager.switch_character(character_name)
+        return False
+    
+    def list_characters(self):
+        """List available characters"""
+        if self.manager:
+            return self.manager.list_characters()
+        return {}
 
     def get_art(self, state: str = "idle") -> str:
         """Get ASCII art for a state"""
-        frames = self.STATES.get(state, self.STATES["idle"])
-        return frames[self.animation_frame % len(frames)]
+        if self.manager:
+            return self.manager.get_art(state)
+        return "Blip not available"
 
     def get_color(self, state: str = "idle") -> str:
         """Get color for a state"""
-        return self.COLORS.get(state, "white")
+        if self.manager:
+            return self.manager.get_color(state)
+        return "white"
 
     def advance_frame(self):
         """Advance to next animation frame"""
-        self.animation_frame += 1
+        if self.manager:
+            self.manager.advance_frame()
+        else:
+            self.animation_frame += 1
 
     def show(
         self,
         message: str,
         state: str = "idle",
         animate: bool = False,
-        duration: float = 0.3
+        duration: Optional[float] = None
     ):
         """
         Display Blip with a message
@@ -188,43 +102,13 @@ class Blip:
             message: Message to display
             state: Blip's emotional state
             animate: Whether to animate
-            duration: Animation duration in seconds
+            duration: Animation duration in seconds (defaults to manager setting)
         """
-        self.current_state = state
-
-        if animate:
-            frames = self.STATES.get(state, self.STATES["idle"])
-            for i in range(len(frames)):
-                console.clear()
-                self.animation_frame = i
-                self._render(message, state)
-                time.sleep(duration)
+        if self.manager:
+            self.manager.show(message, state, animate, duration)
         else:
-            self.animation_frame = 0
-            self._render(message, state)
-
-    def _render(self, message: str, state: str):
-        """Render Blip with message"""
-        art = self.get_art(state)
-        color = self.get_color(state)
-
-        # Create text with art
-        blip_text = Text(art, style=color)
-
-        # Create panel with Blip and message
-        content = Text()
-        content.append(blip_text)
-        content.append("\n\n")
-        content.append(message, style="white")
-
-        panel = Panel(
-            content,
-            title="[bold]Blip[/bold]",
-            border_style=color,
-            padding=(1, 2)
-        )
-
-        console.print(panel)
+            # Fallback
+            print(f"[{state.upper()}] {message}")
 
     def say(self, message: str, state: str = "idle"):
         """Simple speech from Blip"""
@@ -276,31 +160,22 @@ class Blip:
             details: Additional details about the task
             what_user_needs: What the user needs to do (if anything)
         """
-        message = ""
-
-        if task:
-            message += f"🎯 [bold]{task}[/bold]\n\n"
-
-        if details:
-            message += f"📝 {details}\n\n"
-
-        if what_user_needs:
-            message += f"✨ {what_user_needs}\n"
-
-        self.show(message.strip(), "working", animate=True)
+        if self.manager:
+            self.manager.explain_what_is_happening(task, details, what_user_needs)
+        else:
+            message = f"Task: {task}"
+            if details:
+                message += f"\nDetails: {details}"
+            if what_user_needs:
+                message += f"\nNeed: {what_user_needs}"
+            self.show(message, "working", animate=True)
 
     def introduce(self):
         """Introduce Blip to the user"""
-        message = """
-Hi! I'm [bold]Blip[/bold] 👋
-
-I'm your friendly assistant here to guide you through Blonde CLI.
-I'll help you understand what's happening, show you what the agents
-are doing, and explain what you need to do next.
-
-Let me show you around!
-        """
-        self.show(message.strip(), "happy")
+        if self.manager:
+            self.manager.introduce()
+        else:
+            self.show("Hi! I'm Blip, your assistant!", "happy")
 
     def show_agent_status(self, agent_name: str, status: str, message: str = ""):
         """
@@ -311,33 +186,13 @@ Let me show you around!
             status: Current status (working, waiting, done, error)
             message: Optional message from the agent
         """
-        agent_icons = {
-            "generator": "🧱",
-            "reviewer": "🔍",
-            "tester": "🧪",
-            "refactorer": "🔨",
-            "documenter": "📝",
-            "architect": "🏗️",
-            "security": "🔒",
-            "debugger": "🐛"
-        }
-
-        icon = agent_icons.get(agent_name.lower(), "🤖")
-        status_colors = {
-            "working": "bright_yellow",
-            "waiting": "dim",
-            "done": "bright_green",
-            "error": "bright_red"
-        }
-
-        color = status_colors.get(status, "white")
-        status_msg = f"[{color}]{status.upper()}[/{color}]"
-
-        message = f"{icon} [bold]{agent_name}[/bold]: {status_msg}"
-        if message:
-            message += f"\n   {message}"
-
-        self.show(message, "working")
+        if self.manager:
+            self.manager.show_agent_status(agent_name, status, message)
+        else:
+            msg = f"{agent_name}: {status}"
+            if message:
+                msg += f" - {message}"
+            self.show(msg, "working")
 
     def show_multi_agent_status(self, agents: list):
         """
@@ -346,51 +201,15 @@ Let me show you around!
         Args:
             agents: List of dicts with keys: name, status, message
         """
-        status_text = Text()
-        status_text.append("🤖 [bold]Agent Team Status[/bold]\n\n", style="bright_cyan")
-
-        agent_icons = {
-            "generator": "🧱",
-            "reviewer": "🔍",
-            "tester": "🧪",
-            "refactorer": "🔨",
-            "documenter": "📝",
-            "architect": "🏗️",
-            "security": "🔒",
-            "debugger": "🐛"
-        }
-
-        for agent in agents:
-            name = agent.get("name", "Unknown")
-            status = agent.get("status", "unknown")
-            message = agent.get("message", "")
-
-            icon = agent_icons.get(name.lower(), "🤖")
-            status_colors = {
-                "working": "bright_yellow",
-                "waiting": "dim",
-                "done": "bright_green",
-                "error": "bright_red"
-            }
-
-            color = status_colors.get(status, "white")
-            status_text.append(f"{icon} {name}: ", style="white")
-            status_text.append(f"{status.upper()}\n", style=color)
-
-            if message:
-                status_text.append(f"   {message}\n", style="dim")
-
-        panel = Panel(
-            status_text,
-            border_style="bright_cyan",
-            padding=(1, 2)
-        )
-
-        console.print(panel)
-        self.animation_frame += 1
+        if self.manager:
+            self.manager.show_multi_agent_status(agents)
+        else:
+            # Fallback
+            msg = "\n".join([f"{a['name']}: {a['status']}" for a in agents])
+            self.show(msg, "working")
 
 
-# Global Blip instance
+# Global Blip instance for backward compatibility
 blip = Blip()
 
 
