@@ -88,24 +88,21 @@ console = Console()
 app = typer.Typer()
 load_dotenv()
 
-# Add callback to launch dashboard by default (like OpenCode)
+# Add callback to launch welcome screen by default
 @app.callback()
-def main_callback(ctx: typer.Context, no_tui: bool = False, modern: bool = False):
-    """
-    Blonde CLI - Privacy-First Multi-Agent AI Development Assistant
+def main_callback(ctx: typer.Context, no_tui: bool = False, modern: bool = False, welcome: bool = False):
+    """Blonde CLI - Privacy-First Multi-Agent AI Development Assistant
 
-    When run without arguments, launches Dashboard TUI.
+    When run without arguments, launches the new Welcome Screen with integrated TUI.
     Use --no-tui to skip TUI and use CLI mode.
-    Use --modern to launch the new modern Textual TUI.
+    Use --modern to launch new modern Textual TUI (alias for --welcome).
+    Use --welcome to explicitly launch the Welcome Screen.
     """
-    # If no subcommand provided and not explicitly disabling TUI, launch dashboard
+    # If no subcommand provided and not explicitly disabling TUI, launch welcome screen
     if ctx.invoked_subcommand is None and not no_tui:
-        if modern:
-            from tui.modern_tui import launch_modern_tui
-            launch_modern_tui()
-        else:
-            from tui.main_tui import launch_dashboard
-            launch_dashboard()
+        # Always launch welcome screen now (modern flag is alias)
+        from tui.welcome_screen import launch_welcome_screen
+        launch_welcome_screen()
 
 logging.basicConfig(filename=str(Path.home() / ".blonde/debug.log"), level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("blonde")
@@ -136,18 +133,41 @@ ASCII_LOGO = r"""
 HELP_TEXT = """
 [bold cyan]Blonde CLI Help[/bold cyan]
 
-[green]Modes:[/green]
- • [bold]blnd chat[/bold] → interactive chat
- • [bold]blnd gen "prompt"[/bold] → generate code
- • [bold]blnd fix file.py[/bold] → fix code with diff preview
- • [bold]blnd doc file.py[/bold] → explain/document code
- • [bold]blnd create "description" file.py[/bold] → create new file
+[green]🆕 Default Behavior:[/green]
+ • [bold]blonde[/bold] → Launches Welcome Screen with integrated TUI
+ • [bold]blonde --help[/bold] → Show this help message
+ • [bold]blonde --no-tui[/bold] → Skip TUI and use CLI mode
 
-[green]In chat mode:[/green]
- • Type any message to chat with Blonde
- • [bold]exit[/bold] or [bold]quit[/bold] to leave
- • [bold]help[/bold] to see this message again
- • [bold]/save[/bold] → export chat to Markdown
+[green]🎮 Welcome Screen Features:[/green]
+ • 🦎 Blip Character selection (4 characters with 10 states each)
+ • 🤖 Model & Provider selection with custom input
+ • 💬 Interactive chat with session management
+ • ⚙️ Enhanced Settings (Ctrl+S) - 5 comprehensive tabs
+ • 📊 Real-time cost tracking and context warnings
+ • 🚀 Direct access to integrated Dashboard
+
+[green]Classic CLI Commands:[/green]
+ • [bold]blonde chat[/bold] → interactive chat (legacy)
+ • [bold]blonde gen "prompt"[/bold] → generate code
+ • [bold]blonde fix file.py[/bold] → fix code with diff preview
+ • [bold]blonde doc file.py[/bold] → explain/document code
+ • [bold]blonde create "description" file.py[/bold] → create new file
+
+[green]🎮 Dashboard Features (TUI):[/green]
+ • 📁 File browser with integrated editor (2s autosave)
+ • 🔍 Diff panel with color-coded changes
+ • 🤖 Agent thinking panel with streaming display
+ • ⚠️ Context tracker with token warnings (80%/90%/95%)
+ • 📊 Session management with auto-naming and archiving
+ • 🏗️ 3-column layout with collapsible panels
+
+[green]Keyboard Shortcuts:[/green]
+ • [bold]Ctrl+S[/bold] → Enhanced Settings (5 tabs)
+ • [bold]Ctrl+M[/bold] → Model/Provider Switcher
+ • [bold]Ctrl+L[/bold] → Toggle Left Panel (Blip + Context + Files)
+ • [bold]Ctrl+R[/bold] → Toggle Right Panel (Session + Agent Thinking)
+ • [bold]F1[/bold] → Help
+ • [bold]Ctrl+Q[/bold] → Quit
 
 [green]AI Agents (9 total):[/green]
  • 🧱 Generator - Generates initial code
@@ -161,9 +181,9 @@ HELP_TEXT = """
  • ⚡ Optimizer - Coordinates all agents (MASTER)
 
 [green]Agent Commands:[/green]
- • [bold]blnd dev-team status[/bold] → show all agents
- • [bold]blnd dev-team collaborate "task"[/bold] → agents work together
- • [bold]blnd agent-task "task"[/bold] → NEW: Parallel execution with Optimizer
+ • [bold]blonde dev-team status[/bold] → show all agents
+ • [bold]blonde dev-team collaborate "task"[/bold] → agents work together
+ • [bold]blonde agent-task "task"[/bold] → NEW: Parallel execution with Optimizer
 """
 
 
@@ -1680,9 +1700,8 @@ def workflow_cmd(
         console.print(f"[red]Unknown action: {action}[/red]")
 
 
-# Update help text to include new commands
-HELP_TEXT = """
-[bold cyan]Blonde CLI Help[/bold cyan]
+# Help text updated above
+# The duplicate HELP_TEXT has been removed to avoid conflicts
 
 [green]Modes:[/green]
   • [bold]blnd chat[/bold] → interactive chat
