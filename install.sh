@@ -275,6 +275,14 @@ install_dependencies() {
     }
     
     debug_log "Pip upgraded"
+    
+    # Install Textual (required for new TUI)
+    print_info "Installing Textual TUI framework..."
+    pip install "textual>=0.44.0" --quiet || {
+        print_error "Failed to install Textual"
+        exit 1
+    }
+    debug_log "Textual installed"
 
     # Install requirements
     if [ -f "${REPO_DIR}/requirements.txt" ]; then
