@@ -1700,56 +1700,6 @@ def workflow_cmd(
         console.print(f"[red]Unknown action: {action}[/red]")
 
 
-# Help text updated above
-# The duplicate HELP_TEXT has been removed to avoid conflicts
-
-[green]Modes:[/green]
-  • [bold]blnd chat[/bold] → interactive chat
-  • [bold]blnd gen "prompt"[/bold] → generate code
-  • [bold]blnd fix file.py[/bold] → fix code with diff preview
-  • [bold]blnd doc file.py[/bold] → explain/document code
-
-[green]AI Agents (9 total):[/green]
-  🧱 Generator - Generates initial code
-  🔍 Reviewer - Reviews code quality
-  🧪 Tester - Generates tests
-  🔨 Refactorer - Refactors code
-  📝 Documenter - Writes docs
-  🏗️ Architect - Designs architecture
-  🔒 Security - Checks security
-  🐛 Debugger - Fixes bugs
-  ⚡ Optimizer - Coordinates all agents (MASTER)
-
-[green]Agent Commands:[/green]
-  • [bold]blnd dev-team status[/bold] → show all 9 agents
-  • [bold]blnd dev-team collaborate "task"[/bold] → agents work together
-  • [bold]blnd agent-task "task"[/bold] → NEW: Parallel execution with Optimizer
-
-[green]Advanced Features:[/green]
-  • [bold]blnd analyze <file>[/bold] → analyze code structure and quality
-  • [bold]blnd search-code <query>[/bold] → search code across repository
-  • [bold]blnd generate-tests-cmd <file>[/bold] → generate test cases
-  • [bold]blnd lint-cmd <file>[/bold] → lint code with multiple tools
-  • [bold]blnd review-cmd <file>[/bold] → AI-powered code review
-  • [bold]blnd rollback-cmd [action][/bold] → undo operations and snapshots
-  • [bold]blnd workflow-cmd [action][/bold] → manage and run workflows
-
-[green]Flags:[/green]
-  • [bold]--agentic[/bold]         enable tool usage
-  • [bold]--memory[/bold]          enable conversation memory
-  • [bold]--offline[/bold]         use local GGUF model
-  • [bold]--model <name>[/bold]    specify model
-  • [bold]--provider <name>[/bold]  specify provider (openai, huggingface, openrouter)
-  • [bold]--parallel[/bold]         use parallel agent execution (NEW)
-  • [bold]--with-optimizer[/bold]  include Optimizer agent (NEW)
-
-[green]Config:[/green]
-  • Environment: .env file (in project root)
-  • Config directory: ~/.blonde/
-  • Logs: ~/.blonde/debug.log
-
-For more info, visit: https://github.com/your-repo/blonde-cli
-"""
 
 
  
