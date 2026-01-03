@@ -90,17 +90,22 @@ load_dotenv()
 
 # Add callback to launch dashboard by default (like OpenCode)
 @app.callback()
-def main_callback(ctx: typer.Context, no_tui: bool = False):
+def main_callback(ctx: typer.Context, no_tui: bool = False, modern: bool = False):
     """
     Blonde CLI - Privacy-First Multi-Agent AI Development Assistant
 
     When run without arguments, launches Dashboard TUI.
     Use --no-tui to skip TUI and use CLI mode.
+    Use --modern to launch the new modern Textual TUI.
     """
     # If no subcommand provided and not explicitly disabling TUI, launch dashboard
     if ctx.invoked_subcommand is None and not no_tui:
-        from tui.main_tui import launch_dashboard
-        launch_dashboard()
+        if modern:
+            from tui.modern_tui import launch_modern_tui
+            launch_modern_tui()
+        else:
+            from tui.main_tui import launch_dashboard
+            launch_dashboard()
 
 logging.basicConfig(filename=str(Path.home() / ".blonde/debug.log"), level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("blonde")
