@@ -2,7 +2,7 @@
 """
 Blonde CLI Entry Point
 
-New unified entry point that replaces 'blnd' with 'blonde'
+Complete setup flow: First-time setup → Welcome screen → Main app
 """
 
 import sys
@@ -12,23 +12,65 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-# Import and run the CLI
-from tui.cli import app
+def main():
+    """Main entry point following the specified flow"""
+    config_path = Path.home() / ".blonde" / "config.json"
+    
+    if not config_path.exists():
+        # First-time setup
+        try:
+            from tui.setup_wizard_enhanced import EnhancedSetupWizard
+            setup_app = EnhancedSetupWizard()
+            setup_app.run()
+            
+            # Setup completed, now launch welcome screen
+            from tui.welcome_screen import launch_welcome_screen
+            launch_welcome_screen()
+            
+            # After welcome screen exits, launch main app
+            from tui.cli import app
+            app()
+            
+        except KeyboardInterrupt:
+            print("\nSetup interrupted. Run 'blonde' again to restart setup.")
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error during setup: {e}")
+            sys.exit(1)
+    else:
+        # Configuration exists, check for migration
+        try:
+            from tui.config_migration import check_migration_needed
+            if check_migration_needed():
+                from tui.config_migration import run_migration
+                run_migration()
+        except ImportError:
+            pass  # Migration module not available, continue
+        
+        # Launch welcome screen first, then main app
+        try:
+            from tui.welcome_screen import launch_welcome_screen
+            
+            def on_session_start(**kwargs):
+                """Handler for when session starts from welcome screen"""
+                # Launch main app with session context
+                from tui.cli import app
+                app()
+            
+            launch_welcome_screen(on_start=on_session_start)
+            
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error launching welcome screen: {e}")
+            # Fallback to main app
+            try:
+                from tui.cli import app
+                app()
+            except Exception as fallback_e:
+                print(f"Error launching main app: {fallback_e}")
+                sys.exit(1)
 
 if __name__ == "__main__":
-    # Check for first-time setup
-    from pathlib import Path
-    config_path = Path.home() / ".blonde" / "config.json"
-
-    if not config_path.exists():
-        from tui.setup_wizard import run_wizard
-        run_wizard()
-    else:
-        # Check for migration needed
-        from tui.config_migration import check_migration_needed
-        if check_migration_needed():
-            from tui.config_migration import run_migration
-            run_migration()
-
-    # Run the app
-    app()
+    main()

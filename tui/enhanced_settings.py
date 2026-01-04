@@ -149,7 +149,7 @@ class EnhancedSettings(ModalScreen[None]):
                 ("Local (GGUF)", "local")
             ]
             yield Select(
-                values=[opt for opt in provider_options],
+                options=[opt for opt in provider_options],
                 id="provider_select"
             )
             
@@ -157,7 +157,7 @@ class EnhancedSettings(ModalScreen[None]):
             yield Static("Model:")
             model_options = self._get_model_options("openrouter")
             yield Select(
-                values=[opt for opt in model_options],
+                options=[opt for opt in model_options],
                 id="model_select"
             )
             
@@ -173,6 +173,22 @@ class EnhancedSettings(ModalScreen[None]):
             # Test Connection
             yield Button("Test Connection", id="test_connection_btn")
             yield Button("Switch Provider/Model", id="switch_provider_btn", variant="primary")
+            
+            yield Static()  # Spacer
+            
+            # Quick Switch Section (NEW)
+            yield Static("[bold]Quick Configuration[/bold]")
+            yield Static("Add new provider configurations:")
+            yield Button("Add OpenRouter Config", id="add_openrouter_btn")
+            yield Button("Add OpenAI Config", id="add_openai_btn")
+            yield Button("Add Anthropic Config", id="add_anthropic_btn")
+            yield Button("Add Local Model", id="add_local_btn")
+            
+            yield Static()  # Spacer
+            
+            # Current Status
+            yield Static("Current Status:")
+            yield Static(id="current_status_display")
     
     def _compose_blip_tab(self):
         """Compose Blip character selection tab"""
@@ -567,6 +583,209 @@ class EnhancedSettings(ModalScreen[None]):
     def on_import_settings(self) -> None:
         """Handle import settings button"""
         self.notify("Import settings coming soon!", severity="information")
+    
+    # Quick Configuration Button Handlers (NEW)
+    @on(Button.Pressed, "#add_openrouter_btn")
+    def on_add_openrouter_config(self) -> None:
+        """Add OpenRouter configuration dialog"""
+        self.push_screen(ProviderConfigDialog("openrouter"), self._on_provider_config_result)
+    
+    @on(Button.Pressed, "#add_openai_btn")
+    def on_add_openai_config(self) -> None:
+        """Add OpenAI configuration dialog"""
+        self.push_screen(ProviderConfigDialog("openai"), self._on_provider_config_result)
+    
+    @on(Button.Pressed, "#add_anthropic_btn")
+    def on_add_anthropic_config(self) -> None:
+        """Add Anthropic configuration dialog"""
+        self.push_screen(ProviderConfigDialog("anthropic"), self._on_provider_config_result)
+    
+    @on(Button.Pressed, "#add_local_btn")
+    def on_add_local_config(self) -> None:
+        """Add Local model configuration dialog"""
+        self.push_screen(ProviderConfigDialog("local"), self._on_provider_config_result)
+    
+    def _on_provider_config_result(self, result: Optional[Dict[str, str]]) -> None:
+        """Handle provider configuration dialog result"""
+        if result:
+            provider_name = result['provider']
+            api_key = result['api_key']
+            model = result['model']
+            custom_model = result['custom_model']
+            
+            # Save configuration
+            if provider_name not in self.config['providers']:
+                self.config['providers'][provider_name] = {}
+            
+            if api_key:
+                self.config['providers'][provider_name]['api_key'] = api_key
+            
+            final_model = custom_model if custom_model else model
+            if final_model:
+                self.config['providers'][provider_name]['model'] = final_model
+            
+            # Update current provider if this is the first config
+            if len(self.config['providers']) == 1:
+                self.config['default_provider'] = provider_name
+            
+            # Save to file
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.config_path, 'w') as f:
+                json.dump(self.config, f, indent=2)
+            
+            self.notify(f"Added {provider_name} configuration successfully!", severity="information")
+            
+            # Update current status display
+            self._update_current_status()
+    
+    def _update_current_status(self) -> None:
+        """Update current status display"""
+        try:
+            status_display = self.query_one("#current_status_display", Static)
+            provider = self.config.get('default_provider', 'openrouter')
+            providers = self.config.get('providers', {})
+            model = providers.get(provider, {}).get('model', 'openai/gpt-4')
+            
+            status_text = f"Provider: [bold cyan]{provider}[/bold cyan]\n"
+            status_text += f"Model: [bold cyan]{model}[/bold cyan]\n"
+            status_text += f"Configured Providers: [bold]{len(providers)}[/bold]"
+            
+            status_display.update(status_text)
+        except:
+            pass
+
+
+class ProviderConfigDialog(ModalScreen[Dict[str, str]]):
+    """Dialog for adding provider configuration"""
+    
+    BINDINGS = [
+        ("escape", "app.pop_screen", "Cancel")
+    ]
+    
+    def __init__(self, provider_name: str):
+        super().__init__()
+        self.provider_name = provider_name
+    
+    def compose(self) -> ComposeResult:
+        """Compose provider configuration dialog"""
+        with Container():
+            yield Static(f"[bold]Add {self.provider_name.title()} Configuration[/bold]")
+            yield Static()
+            
+            # API Key (for cloud providers)
+            if self.provider_name in ["openrouter", "openai", "anthropic"]:
+                yield Static("API Key:")
+                yield Input(
+                    placeholder="Enter API key",
+                    password=True,
+                    id="api_key"
+                )
+                yield Static()
+            
+            # Model Selection
+            yield Static("Model:")
+            model_options = self._get_model_options()
+            yield Select(
+                options=model_options,
+                id="model_select"
+            )
+            
+            # Custom Model (optional)
+            yield Static("[dim]Custom Model (optional):[/dim]")
+            yield Input(
+                placeholder="e.g., meta-llama/llama-3-70b",
+                id="custom_model"
+            )
+            yield Static()
+            
+            # Buttons
+            with Horizontal():
+                yield Button("Save", id="save_btn", variant="primary")
+                yield Button("Cancel", id="cancel_btn")
+    
+    def _get_model_options(self) -> List[tuple]:
+        """Get model options for this provider"""
+        models_by_provider = {
+            "openrouter": [
+                ("GPT-4", "openai/gpt-4"),
+                ("GPT-4 Turbo", "openai/gpt-4-turbo"),
+                ("GPT-3.5 Turbo", "openai/gpt-3.5-turbo"),
+                ("Claude 3 Opus", "anthropic/claude-3-opus-20240229"),
+                ("Claude 3 Sonnet", "anthropic/claude-3-sonnet-20240229"),
+                ("Mistral Large", "mistralai/mistral-large")
+            ],
+            "openai": [
+                ("GPT-4", "gpt-4"),
+                ("GPT-4 Turbo", "gpt-4-turbo"),
+                ("GPT-4 Turbo Preview", "gpt-4-turbo-preview"),
+                ("GPT-3.5 Turbo", "gpt-3.5-turbo")
+            ],
+            "anthropic": [
+                ("Claude 3 Opus", "claude-3-opus-20240229"),
+                ("Claude 3 Sonnet", "claude-3-sonnet-20240229"),
+                ("Claude 3 Haiku", "claude-3-haiku-20240307")
+            ],
+            "local": [
+                ("CodeLlama 7B", "TheBloke/CodeLlama-7B-GGUF"),
+                ("Mistral 7B", "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"),
+                ("Llama 2 7B", "TheBloke/Llama-2-7B-GGUF")
+            ]
+        }
+        
+        return models_by_provider.get(self.provider_name, [])
+    
+    @on(Button.Pressed, "#save_btn")
+    def on_save(self) -> None:
+        """Handle save button"""
+        api_key = ""
+        model = ""
+        custom_model = ""
+        
+        # Get API key if present
+        if self.provider_name in ["openrouter", "openai", "anthropic"]:
+            try:
+                api_key_input = self.query_one("#api_key", Input)
+                api_key = api_key_input.value.strip()
+            except:
+                pass
+        
+        # Get model selection
+        try:
+            model_select = self.query_one("#model_select", Select)
+            model = str(model_select.value) if model_select.value else ""
+        except:
+            pass
+        
+        # Get custom model
+        try:
+            custom_model_input = self.query_one("#custom_model", Input)
+            custom_model = custom_model_input.value.strip()
+        except:
+            pass
+        
+        # Validate required fields
+        if self.provider_name in ["openrouter", "openai", "anthropic"] and not api_key:
+            self.notify("API key is required for cloud providers", severity="error")
+            return
+        
+        if not model and not custom_model:
+            self.notify("Model selection is required", severity="error")
+            return
+        
+        # Return result
+        result = {
+            'provider': self.provider_name,
+            'api_key': api_key,
+            'model': model,
+            'custom_model': custom_model
+        }
+        
+        self.dismiss(result)
+    
+    @on(Button.Pressed, "#cancel_btn")
+    def on_cancel(self) -> None:
+        """Handle cancel button"""
+        self.dismiss(None)
 
 
 if __name__ == "__main__":

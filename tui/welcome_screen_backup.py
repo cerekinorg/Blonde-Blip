@@ -33,23 +33,14 @@ except ImportError:
 CONFIG_DIR = Path.home() / ".blonde"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
-BLONDE_WORDMARK_DIM = r"""
-██████╗ ██╗      ██████╗ ███╗   ██╗██████╗ ███████╗
-██╔══██╗██║     ██╔═══██╗████╗  ██║██╔══██╗██╔════╝
-██████╔╝██║     ██║   ██║██╔██╗ ██║██║  ██║█████╗  
-██╔══██╗██║     ██║   ██║██║╚██╗██║██║  ██║██╔══╝  
-██████╔╝███████╗╚██████╔╝██║ ╚████║██████╔╝███████╗
-╚═════╝ ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝ ╚══════╝
-"""
-
-BLONDE_WORDMARK_BRIGHT = r"""
-░▒▓███████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░▒▓███████▓▒░  
-░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓███████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░▒▓███████▓▒░  
-░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░        
-░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░        
-░▒▓███████▓▒░░▒▓████████▓▒░▒▓█▓▒░▒▓█▓▒░                                              
+# One-size ASCII logo as specified in the plan
+ASCII_LOGO = r"""
+ ██████╗ ██╗      ██████╗ ███╗   ██╗██████╗ ███████╗
+ ██╔══██╗██║     ██╔═══██╗████╗  ██║██╔══██╗██╔════╝
+ ██████╔╝██║     ██║   ██║██╔██╗ ██║██║  ██║█████╗  
+ ██╔══██╗██║     ██║   ██║██║╚██╗██║██║  ██║██╔══╝  
+  ██████╔╝███████╗╚██████╔╝██║ ╚████║██████╔╝███████╗
+  ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝ ╚══════╝
 """
 
 # Theme color mapping as specified in the plan
@@ -88,100 +79,94 @@ class WelcomeScreen(App):
     CSS = """
     Screen {
         align: center middle;
-        background: #0b0b0b;
+        background: $background;
     }
 
-    #root {
-        width: 100%;
-        height: 100%;
-    }
-
-    #center_stack {
-        align: center middle;
-        width: 100%;
-        height: 100%;
-    }
-
-    #brand_logo {
-        content-align: center middle;
-        width: auto;
+    #welcome_container {
+        width: 80;
         height: auto;
+        min-height: 20;
+        border: solid $primary;
+        background: $panel;
+        padding: 2;
+        margin: 2;
+    }
+
+    #container_title {
+        text-align: center;
+        text-style: bold;
         margin-bottom: 1;
     }
 
-    #prompt_card {
-        width: 78;
-        height: auto;
-        background: #202020;
-        padding: 0;
+    #logo_section {
+        text-align: center;
+        padding: 1;
+        height: 8;
     }
 
-    #prompt_row {
+    #chat_section {
+        height: auto;
+        margin-top: 1;
+    }
+
+    #chat_input {
+        width: 60%;
+        height: 2;
+        max-height: 3;
+        overflow-y: auto;
+        border: solid $primary;
+        background: $surface;
+        padding: 1;
+    }
+
+    #chat_input:focus {
+        border: solid $accent;
+        background: $primary;
+    }
+
+    #model_info {
+        width: 40%;
+        margin-left: 2;
+        padding: 1;
+        background: $surface;
+        border: solid $accent;
+    }
+
+    #model_info_label {
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
+    #provider_badge, #model_badge {
         width: 100%;
-        height: auto;
-    }
-
-    #prompt_bar {
-        width: 1;
-        background: #3b82f6;
-    }
-
-    #search_input {
-        width: 1fr;
-        height: 3;
-        border: none;
-        background: #202020;
         padding: 0 1;
-        color: #d6d6d6;
+        margin: 0 0 1 0;
+        border: solid $primary;
+        background: $panel;
+        text-align: center;
     }
 
-    #search_input:focus {
-        border: none;
-        background: #202020;
+    #help_text {
+        text-align: center;
+        text-style: dim;
+        padding: 1;
+        margin-top: 1;
     }
 
-    #chips_row {
-        width: 100%;
-        padding: 0 1 1 1;
-        height: auto;
+    Button {
+        width: 20;
+        margin: 1;
     }
 
-    .chip {
-        width: auto;
-        height: auto;
-        margin-right: 1;
-        color: #a8a8a8;
+    #start_button {
+        margin-top: 2;
+        width: 30;
     }
 
-    #hints {
-        width: 78;
-        text-align: right;
-        color: #a8a8a8;
-        padding-top: 1;
-    }
-
-    #badges {
-        display: none;
-    }
-
-    #status_bar {
-        dock: bottom;
-        width: 100%;
-        height: 1;
-        color: #a8a8a8;
-        background: #0b0b0b;
-    }
-
-    #status_left {
-        dock: left;
-        width: auto;
-        padding-left: 1;
-    }
-
-    #status_right {
-        dock: right;
-        width: auto;
-        padding-right: 1;
+    .info_text {
+        text-style: dim;
+        padding: 1;
     }
     """
     
@@ -220,10 +205,8 @@ class WelcomeScreen(App):
     def watch_logo_color(self, old_color: str, new_color: str) -> None:
         """Update logo color when theme changes"""
         try:
-            logo_widget = self.query_one("#brand_logo", Static)
-            logo_widget.update(
-                f"[bold #6b6b6b]{BLONDE_WORDMARK_DIM}[/bold #6b6b6b][bold {new_color}]{BLONDE_WORDMARK_BRIGHT}[/bold {new_color}]"
-            )
+            logo_widget = self.query_one("#ascii_logo", Static)
+            logo_widget.update(f"[bold {new_color}]{ASCII_LOGO}[/bold {new_color}]")
         except:
             pass
     
@@ -244,35 +227,42 @@ class WelcomeScreen(App):
         return config
     
     def compose(self) -> ComposeResult:
-        """Compose the OpenCode-style welcome screen"""
-        with Container(id="root"):
-            with Container(id="status_bar"):
-                yield Static("~ /Reboot/Blonde-cli:main", id="status_left")
-                yield Static("1.0.0", id="status_right")
-
-            with Vertical(id="center_stack"):
+        """Compose the compact centered welcome screen"""
+        with Container(id="welcome_container"):
+            # Add title manually since CSS border-title is not supported
+            yield Static("[bold]Blonde CLI[/bold]", id="container_title")
+            # Logo section
+            with Vertical(id="logo_section"):
                 yield Static(
-                    f"[bold #6b6b6b]{BLONDE_WORDMARK_DIM}[/bold #6b6b6b][bold {self.logo_color}]{BLONDE_WORDMARK_BRIGHT}[/bold {self.logo_color}]",
-                    id="brand_logo",
+                    f"[bold {self.logo_color}]{ASCII_LOGO}[/bold {self.logo_color}]",
+                    id="ascii_logo"
                 )
-
-                with Container(id="prompt_card"):
-                    with Horizontal(id="prompt_row"):
-                        yield Static("", id="prompt_bar")
-                        yield ChatInput(
-                            placeholder='Ask anything... "What is the tech stack of this project?"',
-                            id="search_input",
-                        )
-                    with Horizontal(id="chips_row"):
-                        yield Static("[bold #3b82f6]Build[/bold #3b82f6]", classes="chip")
-                        yield Static("[bold]Big Pickle[/bold]", classes="chip")
-                        yield Static("[dim]Blonde Zen[/dim]", classes="chip")
-
-                yield Static("[bold]tab[/bold] switch agent   [bold]ctrl+p[/bold] commands", id="hints")
-
-                with Container(id="badges"):
+            
+            # Chat section with input and model info
+            with Horizontal(id="chat_section"):
+                # Chat input (60% width)
+                yield ChatInput(
+                    placeholder="Type your message here...",
+                    id="chat_input"
+                )
+                
+                # Model info badges (40% width)
+                with Container(id="model_info"):
+                    yield Static("Current Model", id="model_info_label")
                     yield Static("Provider: Loading...", id="provider_badge")
                     yield Static("Model: Loading...", id="model_badge")
+            
+            # Help text
+            yield Static(
+                "[dim]Press Enter to start session • Ctrl+S for settings • Ctrl+C to quit[/dim]",
+                id="help_text"
+            )
+            
+            # Action buttons
+            with Horizontal():
+                yield Button("Start Session", id="start_button", variant="primary")
+                yield Button("Settings", id="settings_button")
+                yield Button("Quit", id="quit_button", variant="error")
     
     def on_mount(self) -> None:
         """Initialize screen on mount"""
@@ -282,9 +272,9 @@ class WelcomeScreen(App):
         # Update from config
         self._update_from_config()
         
-        # Focus search input
-        search_input = self.query_one("#search_input", ChatInput)
-        search_input.focus()
+        # Focus chat input
+        chat_input = self.query_one("#chat_input", ChatInput)
+        chat_input.focus()
     
     def _start_config_watcher(self) -> None:
         """Watch configuration file for changes"""
@@ -330,17 +320,17 @@ class WelcomeScreen(App):
         except:
             pass
     
-    @on(Input.Submitted, "#search_input")
-    def on_search_submit(self, event: Input.Submitted) -> None:
-        """Handle search input submission"""
+    @on(Input.Submitted, "#chat_input")
+    def on_chat_submit(self, event: Input.Submitted) -> None:
+        """Handle chat input submission"""
         self.first_prompt = event.value.strip()
         self.action_start_session()
     
     @on(Button.Pressed, "#start_button")
     def on_start_button(self) -> None:
         """Handle start button press"""
-        search_input = self.query_one("#search_input", ChatInput)
-        self.first_prompt = search_input.value.strip()
+        chat_input = self.query_one("#chat_input", ChatInput)
+        self.first_prompt = chat_input.value.strip()
         self.action_start_session()
     
     @on(Button.Pressed, "#settings_button")
@@ -355,12 +345,6 @@ class WelcomeScreen(App):
     
     def action_start_session(self) -> None:
         """Start a new session and launch dashboard"""
-        try:
-            search_input = self.query_one("#search_input", ChatInput)
-            self.first_prompt = search_input.value.strip()
-        except Exception:
-            pass
-
         config = self._load_config()
         provider = config.get('default_provider', 'openrouter')
         providers = config.get('providers', {})
