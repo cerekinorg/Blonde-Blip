@@ -20,13 +20,14 @@ def main():
     """
     # Check if setup needed
     if not CONFIG_FILE.exists():
-        from tui.setup_wizard import run_setup_wizard
-        
+        from tui.setup_wizard_enhanced import EnhancedSetupWizard
+
         print("\nWelcome to Blonde CLI!")
         print("Running setup wizard...")
-        
-        # Run setup wizard
-        run_setup_wizard()
+
+        # Run enhanced setup wizard
+        setup_app = EnhancedSetupWizard()
+        setup_app.run()
         
         # After setup, launch main TUI
         print("\nLaunching Blonde CLI TUI...\n")
@@ -38,10 +39,10 @@ def main():
     #         from tui.config_migration import run_migration
     #         run_migration()
     
-    # Launch main application
+    # Launch main application (welcome screen + dashboard)
     from tui.welcome_screen import launch_welcome_screen
     from tui.dashboard import Dashboard
-    
+
     def on_session_started(session_id, first_prompt, provider, model):
         """Callback when session starts - launch dashboard"""
         dashboard = Dashboard(session_id=session_id, first_prompt=first_prompt)
@@ -53,7 +54,7 @@ def main():
             print(f"Error in dashboard: {e}")
             import traceback
             traceback.print_exc()
-    
+
     try:
         launch_welcome_screen(on_start=on_session_started)
     except Exception as e:
