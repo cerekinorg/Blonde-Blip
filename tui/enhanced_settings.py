@@ -473,13 +473,13 @@ class EnhancedSettings(ModalScreen[None]):
         except Exception:
             pass
         
-        # Load sessions list
-        self._load_sessions_list()
-        
         # Update Blip preview
         self._update_blip_preview()
 
         self._update_current_status()
+        
+        # Load sessions list after widgets are fully mounted
+        self.call_after_refresh(self._load_sessions_list)
 
     @on(Select.Changed, "#provider_select")
     def on_provider_changed(self, event: Select.Changed) -> None:
@@ -510,25 +510,29 @@ class EnhancedSettings(ModalScreen[None]):
     
     def _load_sessions_list(self):
         """Load sessions into table"""
-        if not self.session_manager:
-            return
-        
-        sessions_table = self.query_one("#sessions_table", DataTable)
-        if not sessions_table:
-            return
-        
-        sessions_table.clear()
-        sessions_table.add_column("Name", width=30)
-        sessions_table.add_column("Created", width=20)
-        sessions_table.add_column("Provider", width=15)
-        
-        sessions = self.session_manager.list_sessions()
-        for session in sessions:
-            sessions_table.add_row(
-                session['name'],
-                session['created_at'][:19],
-                session['provider']
-            )
+        try:
+            if not self.session_manager:
+                return
+            
+            sessions_table = self.query_one("#sessions_table", DataTable)
+            if not sessions_table:
+                return
+            
+            sessions_table.clear()
+            sessions_table.add_column("Name", width=30)
+            sessions_table.add_column("Created", width=20)
+            sessions_table.add_column("Provider", width=15)
+            
+            sessions = self.session_manager.list_sessions()
+            for session in sessions:
+                sessions_table.add_row(
+                    session['name'],
+                    session['created_at'][:19],
+                    session['provider']
+                )
+        except Exception:
+            # Silently fail if table doesn't exist yet
+            pass
     
     def _update_blip_preview(self):
         """Update Blip character preview"""

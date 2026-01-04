@@ -121,26 +121,30 @@ class ChatPanel(Vertical):
         with ContentSwitcher(id="view_switcher"):
             # Chat view - Enhanced with inline agent thinking and diff
             with Vertical(id="chat_view"):
-                # Prompt input at top (always visible)
-                yield Input(placeholder="Type your message here...", id="chat_input")
+                # Chat log as main content (takes most space)
+                yield RichLog(id="chat_log", wrap=True, highlight=True)
                 
-                # Inline agent thinking display
+                # Inline agent thinking display (compact)
                 if MANAGERS_AVAILABLE:
                     yield Static(id="agent_thinking_inline")
                 else:
                     yield Static("Agent thinking not available", id="agent_thinking_inline")
                 
-                # Inline diff display
+                # Inline diff display (compact)
                 if MANAGERS_AVAILABLE:
                     yield Static(id="diff_display_inline")
                 else:
                     yield Static("Diff not available", id="diff_display_inline")
                 
-                # Chat log as main content
-                yield RichLog(id="chat_log", wrap=True, highlight=True)
+                # Prompt input at bottom (always visible)
+                yield Input(placeholder="Type your message here...", id="chat_input")
             
-            # File editor view
-            with Vertical(id="editor_view"):
+            # File editor view - with directory tree
+            with Horizontal(id="editor_view"):
+                # Directory tree on the left
+                yield DirectoryTree(str(Path.cwd()), id="editor_file_tree")
+                
+                # File editor on the right
                 if MANAGERS_AVAILABLE:
                     yield FileEditor()
                 else:
@@ -154,12 +158,40 @@ class ChatPanel(Vertical):
                     yield Static("Diff panel not available")
     
     def on_mount(self) -> None:
-        self.chat_log = self.query_one("#chat_log", RichLog)
+        # Get references to widgets
+        try:
+            self.chat_log = self.query_one("#chat_log", RichLog)
+        except:
+            pass
+        
         self.view_switcher = self.query_one("#view_switcher", ContentSwitcher)
+        
+        # Ensure chat_view is the default view
+        if self.view_switcher:
+            self.view_switcher.current = "chat_view"
+            self.current_view = "chat"
+        
+        # Update displays
         self._update_view_mode_indicator()
         self._update_agent_thinking_inline("")
         self._update_diff_display_inline("")
-        self.add_message("system", "Welcome to Blonde CLI! Type your message or use Ctrl+S for settings.")
+        
+        # Add welcome message
+        try:
+            self.add_message("system", "Welcome to Blonde CLI! Type your message or use Ctrl+S for settings.")
+        except:
+            pass
+        
+        # Focus chat input after a short delay to ensure it's mounted
+        def focus_input():
+            try:
+                chat_input = self.query_one("#chat_input", Input)
+                if chat_input:
+                    chat_input.focus()
+            except:
+                pass
+        
+        self.call_after_refresh(focus_input)
     
     def add_message(self, role: str, content: str) -> None:
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -291,15 +323,18 @@ class ChatPanel(Vertical):
         
         self.add_message("error", f"Error processing your request: {error}")
     
-    def switch_to_editor(self, file_path: Path) -> None:
+    def switch_to_editor(self, file_path: Path = None) -> None:
         """Switch to file editor view"""
         self.current_view = "editor"
         if self.view_switcher:
             self.view_switcher.current = "editor_view"
-            self.border_title = f"File Editor - {file_path.name}"
+            if file_path:
+                self.border_title = f"File Editor - {file_path.name}"
+            else:
+                self.border_title = "File Editor"
             
-            # Load file in editor
-            if MANAGERS_AVAILABLE:
+            # Load file in editor if provided
+            if file_path and MANAGERS_AVAILABLE:
                 try:
                     file_editor = self.query_one(FileEditor)
                     if file_editor:
@@ -307,6 +342,13 @@ class ChatPanel(Vertical):
                 except:
                     pass
         self._update_view_mode_indicator()
+    
+    def toggle_editor_chat(self) -> None:
+        """Toggle between editor and chat views"""
+        if self.current_view == "chat":
+            self.switch_to_editor()
+        else:
+            self.switch_to_chat()
     
     def switch_to_diff(self, file_path: Path, old_content: str, new_content: str) -> None:
         """Switch to diff view"""
@@ -347,6 +389,21 @@ class ChatPanel(Vertical):
         """Watch for current view changes"""
         self._update_view_mode_indicator()
     
+    @on(DirectoryTree.FileSelected, "#editor_file_tree")
+    def on_editor_file_selected(self, event: DirectoryTree.FileSelected) -> None:
+        """Handle file selection in editor view"""
+        path = Path(event.path)
+        if path.is_file():
+            # Load file in editor
+            if MANAGERS_AVAILABLE:
+                try:
+                    file_editor = self.query_one(FileEditor)
+                    if file_editor:
+                        file_editor.file_path = path
+                        self.border_title = f"File Editor - {path.name}"
+                except:
+                    pass
+    
     def switch_to_chat(self) -> None:
         """Switch back to chat view"""
         self.current_view = "chat"
@@ -366,7 +423,12 @@ class ChatPanel(Vertical):
                     "diff": "green"
                 }
                 color = mode_colors.get(self.current_view, "white")
-                indicator.update(f"[{color}]Mode: {self.current_view.upper()}[/{color}] | Press Ctrl+E or Esc to return to chat")
+                if self.current_view == "chat":
+                    indicator.update(f"[{color}]Mode: {self.current_view.upper()}[/{color}] | Press Ctrl+E to switch to editor")
+                elif self.current_view == "editor":
+                    indicator.update(f"[{color}]Mode: {self.current_view.upper()}[/{color}] | Press Ctrl+E to switch to chat")
+                else:
+                    indicator.update(f"[{color}]Mode: {self.current_view.upper()}[/{color}] | Press Ctrl+E or Esc to return to chat")
         except:
             pass
     
@@ -444,29 +506,53 @@ class Dashboard(App):
     #chat_log {
         height: 1fr;
         border: solid $primary;
+        min-height: 10;
     }
     
     #chat_input {
         margin-top: 1;
+        height: 3;
     }
     
     #agent_thinking_inline {
-        height: 8;
-        max-height: 12;
+        height: 4;
+        max-height: 6;
         border: solid $primary;
         background: $panel;
+        overflow: hidden;
+        margin-top: 1;
     }
     
     #diff_display_inline {
-        height: 8;
-        max-height: 12;
+        height: 4;
+        max-height: 6;
         border: solid $primary;
         background: $panel;
+        overflow: hidden;
+        margin-top: 1;
     }
     
     #view_mode_indicator {
         padding: 1;
         background: $boost;
+        height: 3;
+    }
+    
+    #chat_view {
+        height: 100%;
+    }
+    
+    #editor_view {
+        height: 100%;
+    }
+    
+    #editor_file_tree {
+        width: 30%;
+        border: solid $primary;
+    }
+    
+    #diff_view {
+        height: 100%;
     }
     
     SessionPanel {
@@ -586,11 +672,23 @@ class Dashboard(App):
                 pass
     
     def action_switch_to_chat(self) -> None:
-        """Switch center panel back to chat/prompt mode"""
+        """Switch center panel back to chat/prompt mode or toggle editor"""
         chat_panel = self.query_one(ChatPanel)
         if chat_panel:
-            chat_panel.switch_to_chat()
-            self.notify("Switched to chat mode", severity="information")
+            # Toggle between chat and editor
+            chat_panel.toggle_editor_chat()
+            
+            # Focus appropriate input
+            try:
+                if chat_panel.current_view == "chat":
+                    chat_input = chat_panel.query_one("#chat_input", Input)
+                    if chat_input:
+                        chat_input.focus()
+                    self.notify("Switched to chat mode", severity="information")
+                else:
+                    self.notify("Switched to editor mode", severity="information")
+            except:
+                pass
     
     def action_toggle_left_panel(self) -> None:
         """Toggle left panel visibility"""
