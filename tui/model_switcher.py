@@ -165,9 +165,8 @@ class ModelSwitcher(ModalScreen[Optional[dict]]):
         if not model_select:
             return
         
-        model_select.clear_options()
         model_options = self._get_model_options(provider)
-        model_select.add_options(model_options)
+        model_select.set_options(model_options)
     
     def _update_displays(self):
         """Update current provider/model displays"""

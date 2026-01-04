@@ -39,12 +39,25 @@ def main():
     #         run_migration()
     
     # Launch main application
-    from tui.main_tui import launch_modern_tui
+    from tui.welcome_screen import launch_welcome_screen
+    from tui.dashboard import Dashboard
+    
+    def on_session_started(session_id, first_prompt, provider, model):
+        """Callback when session starts - launch dashboard"""
+        dashboard = Dashboard(session_id=session_id, first_prompt=first_prompt)
+        try:
+            dashboard.run()
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+        except Exception as e:
+            print(f"Error in dashboard: {e}")
+            import traceback
+            traceback.print_exc()
     
     try:
-        launch_modern_tui()
+        launch_welcome_screen(on_start=on_session_started)
     except Exception as e:
-        print(f"Error launching TUI: {e}")
+        print(f"Error launching welcome screen: {e}")
         import traceback
         traceback.print_exc()
 

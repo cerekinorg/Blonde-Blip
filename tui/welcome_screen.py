@@ -41,18 +41,16 @@ class WelcomeScreen(App):
     
     CSS = """
     Screen {
-        layout: grid;
-        grid-size: 1 2;
-        grid-rows: 1fr 3;
+        layout: vertical;
     }
     
     #header_container {
-        height: 8;
         border: solid $primary;
         background: $panel;
     }
     
     #content_container {
+        height: 1fr;
         border: solid $primary;
         background: $surface;
     }
@@ -87,7 +85,11 @@ class WelcomeScreen(App):
     }
     
     #selection_row {
-        height: 3;
+        height: 1fr;
+    }
+    
+    #main_vertical {
+        height: 100%;
     }
     
     Button {
@@ -156,64 +158,66 @@ class WelcomeScreen(App):
             yield Static("[bold cyan]╚═════════════════════════════════════════════╝[/bold cyan]", id="bottom_border")
         
         with Container(id="content_container"):
-            with Horizontal(id="selection_row"):
-                # Left side: Model/Provider selection
-                with Vertical(id="model_container"):
-                    yield Static("[bold]AI Provider:[/bold]", id="provider_label")
-                    provider_options = [
-                        ("OpenRouter", "openrouter"),
-                        ("OpenAI", "openai"),
-                        ("Anthropic", "anthropic"),
-                        ("Local (GGUF)", "local")
-                    ]
-                    yield Select(
-                        values=[opt for opt in provider_options],
-                        id="provider_select"
-                    )
-                    
-                    yield Static("[bold]Model:[/bold]", id="model_label")
-                    model_options = self._get_model_options(self.current_provider)
-                    yield Select(
-                        values=[opt for opt in model_options],
-                        id="model_select"
-                    )
-                    
-                    yield Static("[bold dim]Or enter custom model:[/bold dim]", id="custom_label")
-                    yield Input(
-                        placeholder="e.g., meta-llama/llama-3-70b",
-                        id="custom_model_input"
-                    )
-            
-            # Right side: Blip display
-            with Vertical(id="blip_container"):
-                if MANAGERS_AVAILABLE:
-                    character_name = self.blip_manager.current_character_name
-                    character_info = self.blip_manager.get_character_info()
-                    yield Static(
-                        f"[bold]Blip - {character_name.title()}[/bold]\n{character_info.get('description', '')}",
-                        id="blip_info"
-                    )
-                    art = self.blip_manager.get_art("happy")
-                    color = self.blip_manager.get_color("happy")
-                    yield Static(f"[{color}]{art}[/{color}]", id="blip_display")
-            
-            # Bottom: Chat input
-            with Vertical(id="input_container"):
-                yield Static("[bold]Start a new session:[/bold]", id="input_label")
-                yield Input(
-                    placeholder="Type your first message here, or press Enter to start...",
-                    id="chat_input"
-                )
-                yield Static(
-                    "[dim]💡 Tip: You can change model/provider and other settings anytime with Ctrl+S[/dim]",
-                    id="tip_text",
-                    classes="info_text"
-                )
+            with Vertical(id="main_vertical"):
+                # Top section: Model/Provider selection and Blip display
+                with Horizontal(id="selection_row"):
+                    # Left side: Model/Provider selection
+                    with Vertical(id="model_container"):
+                        yield Static("[bold]AI Provider:[/bold]", id="provider_label")
+                        provider_options = [
+                            ("OpenRouter", "openrouter"),
+                            ("OpenAI", "openai"),
+                            ("Anthropic", "anthropic"),
+                            ("Local (GGUF)", "local")
+                        ]
+                        yield Select(
+                            options=[opt for opt in provider_options],
+                            id="provider_select"
+                        )
+                        
+                        yield Static("[bold]Model:[/bold]", id="model_label")
+                        model_options = self._get_model_options(self.current_provider)
+                        yield Select(
+                            options=[opt for opt in model_options],
+                            id="model_select"
+                        )
+                        
+                        yield Static("[bold dim]Or enter custom model:[/bold dim]", id="custom_label")
+                        yield Input(
+                            placeholder="e.g., meta-llama/llama-3-70b",
+                            id="custom_model_input"
+                        )
                 
-                with Horizontal():
-                    yield Button("Start Session", id="start_button", variant="primary")
-                    yield Button("Settings (Ctrl+S)", id="settings_button")
-                    yield Button("Quit", id="quit_button", variant="error")
+                    # Right side: Blip display
+                    with Vertical(id="blip_container"):
+                        if MANAGERS_AVAILABLE:
+                            character_name = self.blip_manager.current_character_name
+                            character_info = self.blip_manager.get_character_info()
+                            yield Static(
+                                f"[bold]Blip - {character_name.title()}[/bold]\n{character_info.get('description', '')}",
+                                id="blip_info"
+                            )
+                            art = self.blip_manager.get_art("happy")
+                            color = self.blip_manager.get_color("happy")
+                            yield Static(f"[{color}]{art}[/{color}]", id="blip_display")
+                
+                # Bottom: Chat input
+                with Vertical(id="input_container"):
+                    yield Static("[bold]Start a new session:[/bold]", id="input_label")
+                    yield Input(
+                        placeholder="Type your first message here, or press Enter to start...",
+                        id="chat_input"
+                    )
+                    yield Static(
+                        "[dim]💡 Tip: You can change model/provider and other settings anytime with Ctrl+S[/dim]",
+                        id="tip_text",
+                        classes="info_text"
+                    )
+                    
+                    with Horizontal():
+                        yield Button("Start Session", id="start_button", variant="primary")
+                        yield Button("Settings (Ctrl+S)", id="settings_button")
+                        yield Button("Quit", id="quit_button", variant="error")
     
     def _get_model_options(self, provider: str) -> List[tuple]:
         """Get available models for a provider"""
@@ -267,9 +271,8 @@ class WelcomeScreen(App):
         
         # Update model options
         model_select = self.query_one("#model_select", Select)
-        model_select.clear_options()
         model_options = self._get_model_options(self.current_provider)
-        model_select.add_options(model_options)
+        model_select.set_options(model_options)
         model_select.value = model_options[0][1] if model_options else ""
         self.current_model = model_select.value
     
