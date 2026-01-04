@@ -8,7 +8,7 @@ from textual.widgets import (
     Header, Footer, Static, Input, Button, 
     Select, RadioSet, RadioButton, Switch
 )
-from textual.containers import Horizontal, Vertical, Container
+from textual.containers import Horizontal, Vertical, Container, ScrollableContainer
 from textual.screen import ModalScreen
 from textual import on
 from textual.reactive import reactive
@@ -43,11 +43,31 @@ class EnhancedSetupWizard(App):
     #setup_container {
         border: solid #444;
         background: #1a1a1a;
-        padding: 2;
-        margin: 1;
-        width: 80;
-        height: auto;
+        padding: 1;
+        margin: 0;
+        width: 95%;
+        max-width: 100;
+        min-width: 60;
+        height: 95%;
+        max-height: 100%;
+        layout: vertical;
         align: center middle;
+    }
+
+    #content_scroll {
+        height: 1fr;
+        max-height: 100%;
+        overflow-y: auto;
+        scrollbar-size: 1;
+        scrollbar-track-color: #1a1a1a;
+        scrollbar-thumb-color: #444;
+    }
+
+    #button_container {
+        height: auto;
+        border-top: solid #444;
+        padding-top: 1;
+        margin-top: 1;
     }
 
     #step_title {
@@ -189,16 +209,18 @@ class EnhancedSetupWizard(App):
     def compose(self) -> ComposeResult:
         """Compose setup wizard"""
         with Container(id="setup_container"):
-            yield Static(f"Step {self.current_step + 1}/{self.total_steps}", id="step_indicator", classes="step-indicator")
-            yield Static(self._get_step_title(), id="step_title")
-            yield Static(id="step_content")
-            yield Static(id="step_note")
-            
-            with Horizontal(id="button_container"):
-                yield Button("Back", id="back_btn", disabled=self.current_step == 0)
-                yield Button("Skip", id="skip_btn", classes="optional-note")
-                yield Button("Continue", id="continue_btn", variant="primary")
-                yield Button("Quit", id="quit_btn", variant="error")
+            with Vertical():
+                with ScrollableContainer(id="content_scroll"):
+                    yield Static(f"Step {self.current_step + 1}/{self.total_steps}", id="step_indicator", classes="step-indicator")
+                    yield Static(self._get_step_title(), id="step_title")
+                    yield Static(id="step_content")
+                    yield Static(id="step_note")
+
+                with Horizontal(id="button_container"):
+                    yield Button("Back", id="back_btn", disabled=self.current_step == 0)
+                    yield Button("Skip", id="skip_btn", classes="optional-note")
+                    yield Button("Continue", id="continue_btn", variant="primary")
+                    yield Button("Quit", id="quit_btn", variant="error")
     
     def on_mount(self) -> None:
         """Initialize wizard on mount"""
