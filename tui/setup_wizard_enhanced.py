@@ -48,42 +48,61 @@ class EnhancedSetupWizard(App):
         width: 95%;
         max-width: 100;
         min-width: 60;
-        height: 95%;
-        max-height: 100%;
+        height: auto;
+        max-height: 95%;
         layout: vertical;
         align: center middle;
     }
 
     #content_scroll {
-        height: 1fr;
-        max-height: 100%;
+        height: auto;
+        max-height: 80%;
         overflow-y: auto;
+        padding: 1;
     }
 
     #button_container {
-        height: auto;
+        height: 3;
         border-top: solid #444;
         padding-top: 1;
         margin-top: 1;
+        layout: grid;
+        grid-size: 4 1;
+        grid-columns: auto auto auto auto;
+        align: center middle;
+    }
+
+    Button {
+        width: 14;
+        min-width: 10;
+        height: 3;
+        margin: 0;
+        padding: 0 1;
+        background: #333;
+        border: solid #555;
     }
 
     #step_title {
         text-align: center;
         text-style: bold;
-        padding: 1;
+        padding: 0 1;
         color: #3b82f6;
+        margin-bottom: 0;
     }
 
     #step_content {
-        padding: 1;
-        background: #202020;
-        border: solid #444;
-        margin: 1 0;
+        padding: 0 1;
+        background: transparent;
+        border: none;
+        margin: 0 0 0 0;
     }
 
     Button {
-        width: 20;
-        margin: 1;
+        width: 14;
+        min-width: 10;
+        height: 3;
+        margin: 0;
+        padding: 0 1;
         background: #333;
         border: solid #555;
     }
@@ -97,6 +116,16 @@ class EnhancedSetupWizard(App):
         background: #444;
         border: solid #666;
         color: #aaa;
+    }
+
+    #back_btn {
+        background: #333;
+        border: solid #555;
+    }
+
+    #quit_btn {
+        background: #8b0000;
+        border: solid #a00000;
     }
 
     Input {
@@ -317,63 +346,34 @@ class EnhancedSetupWizard(App):
     
     def _get_model_content(self) -> str:
         """Get model selection content"""
-        return """
-        [bold]Select Default Model[/bold]
-        
-        Choose the default model for your selected provider:
-        
-        [dim]Premium models offer better reasoning, while smaller models are faster.[/dim]
-        """
+        return """[bold]Select Default Model[/bold]
+
+Choose the default model for your selected provider."""
     
     def _get_api_content(self) -> str:
         """Get API configuration content"""
-        return """
-        [bold]Configure API Access[/bold]
-        
-        Enter your API key to access the selected provider.
-        
-        [dim]Your API key will be stored locally and only used for AI requests.[/dim]
-        """
+        return """[bold]Configure API Access[/bold]
+
+Enter your API key for the selected provider.
+[dim]Key stored securely via keyring.[/dim]"""
     
     def _get_blip_content(self) -> str:
         """Get Blip character selection content"""
-        return """
-        [bold]Choose Your Blip Character[/bold]
-        
-        Blip is your digital companion that guides you through development.
-        Choose a personality that fits your style!
-        
-        [dim]Default: Axolotl (friendly, playful, curious)[/dim]
-        """
+        return """[bold]Choose Blip Character[/bold]
+
+Your AI coding companion."""
     
     def _get_theme_content(self) -> str:
         """Get theme selection content"""
-        return """
-        [bold]Choose UI Theme[/bold]
-        
-        Select the color theme for Blonde CLI interface:
-        
-        • [bold]None[/bold] - Default terminal colors
-        • [bold]Auto[/bold] - Auto-detect terminal theme  
-        • [bold]Light[/bold] - Optimized for light terminals
-        • [bold]Dark[/bold] - Optimized for dark terminals
-        
-        [dim]Default: None theme (can be changed later)[/dim]
-        """
+        return """[bold]Choose UI Theme[/bold]
+
+Options: None, Auto, Light, Dark"""
     
     def _get_privacy_content(self) -> str:
         """Get privacy settings content"""
-        return """
-        [bold]Configure Privacy Settings[/bold]
-        
-        Choose how Blonde CLI handles your data:
-        
-        • [bold]Strict[/bold] - Maximum privacy, minimal data collection
-        • [bold]Balanced[/bold] - Good balance of privacy and functionality
-        • [bold]Permissive[/bold] - Enhanced features with more data usage
-        
-        [dim]Default: Balanced (recommended for most users)[/dim]
-        """
+        return """[bold]Privacy Settings[/bold]
+
+Options: Strict, Balanced, Permissive"""
     
     def _get_complete_content(self) -> str:
         """Get setup complete content"""
