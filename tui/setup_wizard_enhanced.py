@@ -35,16 +35,16 @@ class EnhancedSetupWizard(App):
     
     CSS = """
     Screen {
-        background: #0b0b0b;
+        background: #1e1e1e;
         layout: grid;
         grid-size: 1 1;
     }
 
     #setup_container {
-        border: solid #444;
-        background: #1a1a1a;
-        padding: 1;
-        margin: 0;
+        border: solid #666;
+        background: #2d2d2d;
+        padding: 2;
+        margin: 1;
         width: 95%;
         max-width: 100;
         min-width: 60;
@@ -58,138 +58,224 @@ class EnhancedSetupWizard(App):
         height: auto;
         max-height: 80%;
         overflow-y: auto;
-        padding: 1;
+        padding: 2;
+        background: transparent;
     }
 
     #button_container {
-        height: 3;
-        border-top: solid #444;
+        height: 4;
+        border-top: solid #666;
         padding-top: 1;
-        margin-top: 1;
+        margin-top: 2;
         layout: grid;
         grid-size: 4 1;
         grid-columns: auto auto auto auto;
         align: center middle;
+        column-gap: 1;
     }
 
     Button {
         width: 14;
-        min-width: 10;
+        min-width: 12;
         height: 3;
-        margin: 0;
-        padding: 0 1;
-        background: #333;
-        border: solid #555;
+        margin: 0 1;
+        padding: 0 2;
+        background: #404040;
+        border: solid #666;
+        color: #ffffff;
+    }
+
+    Button:hover {
+        background: #505050;
+        border: solid #777;
     }
 
     #step_title {
         text-align: center;
         text-style: bold;
-        padding: 0 1;
-        color: #3b82f6;
-        margin-bottom: 0;
+        padding: 1;
+        color: #60a5fa;
+        margin-bottom: 1;
+        font-size: 110%;
     }
 
     #step_content {
-        padding: 0 1;
+        padding: 2;
         background: transparent;
         border: none;
-        margin: 0 0 0 0;
+        margin: 1 0;
+        color: #e5e5e5;
     }
 
-    Button {
-        width: 14;
-        min-width: 10;
-        height: 3;
-        margin: 0;
-        padding: 0 1;
-        background: #333;
-        border: solid #555;
+    #step_content Static {
+        color: #e5e5e5;
     }
 
     #continue_btn {
         background: #3b82f6;
+        border: solid #60a5fa;
+        color: #ffffff;
+    }
+
+    #continue_btn:hover {
+        background: #2563eb;
         border: solid #3b82f6;
     }
 
     #skip_btn {
-        background: #444;
-        border: solid #666;
-        color: #aaa;
+        background: #555;
+        border: solid #777;
+        color: #d0d0d0;
+    }
+
+    #skip_btn:hover {
+        background: #666;
+        border: solid #888;
+        color: #ffffff;
     }
 
     #back_btn {
-        background: #333;
-        border: solid #555;
+        background: #404040;
+        border: solid #666;
+        color: #ffffff;
+    }
+
+    #back_btn:hover {
+        background: #505050;
+        border: solid #777;
     }
 
     #quit_btn {
-        background: #8b0000;
-        border: solid #a00000;
+        background: #dc2626;
+        border: solid #ef4444;
+        color: #ffffff;
+    }
+
+    #quit_btn:hover {
+        background: #b91c1c;
+        border: solid #dc2626;
     }
 
     Input {
-        margin: 1 0;
+        margin: 2 0;
         width: 100%;
-        background: #111;
-        border: solid #444;
-        color: #d6d6d6;
+        background: #1a1a1a;
+        border: solid #666;
+        color: #ffffff;
+        padding: 1;
+        height: 3;
     }
 
     Input:focus {
-        border: solid #3b82f6;
+        border: solid #60a5fa;
+        background: #222;
     }
 
     Select {
-        margin: 1 0;
+        margin: 2 0;
         width: 100%;
-        background: #111;
-        border: solid #444;
+        background: #1a1a1a;
+        border: solid #666;
+        color: #ffffff;
+        padding: 1;
+        height: 3;
+    }
+
+    Select:focus {
+        border: solid #60a5fa;
+        background: #222;
     }
 
     RadioSet, RadioButton {
-        margin: 1 0;
-        color: #d6d6d6;
+        margin: 2 0;
+        color: #e5e5e5;
+    }
+
+    #step_indicator {
+        text-align: center;
+        text-style: bold;
+        padding: 1;
+        color: #a0a0a0;
+        margin-bottom: 1;
     }
 
     .step-indicator {
         text-align: center;
-        text-style: dim;
+        text-style: bold;
         padding: 1;
-        color: #888;
+        color: #a0a0a0;
+    }
+
+    #step_note {
+        padding: 1;
+        margin: 1 0;
     }
 
     .required-note {
         text-style: bold;
-        color: #ef4444;
+        color: #f87171;
         padding: 1;
+        background: #3a1f1f;
+        border: solid #f87171;
     }
 
     .optional-note {
-        text-style: dim;
+        text-style: bold;
         padding: 1;
-        color: #888;
+        color: #fbbf24;
+        background: #3a341f;
+        border: solid #fbbf24;
     }
 
     .blip-preview {
         text-align: center;
-        padding: 1;
-        margin: 1 0;
-        border: solid #444;
-        background: #111;
+        padding: 2;
+        margin: 2 0;
+        border: solid #666;
+        background: #1a1a1a;
+        color: #e5e5e5;
     }
 
     .provider-option {
-        padding: 1;
+        padding: 2;
         margin: 1 0;
-        background: #252525;
-        border: solid #444;
-        color: #d6d6d6;
+        background: #333;
+        border: solid #666;
+        color: #e5e5e5;
     }
 
     .provider-option:hover {
-        background: #2a2a2a;
-        border: solid #555;
+        background: #404040;
+        border: solid #777;
+    }
+
+    Static {
+        color: #e5e5e5;
+    }
+
+    #progress_bar {
+        height: 2;
+        margin: 1 0;
+        border: solid #666;
+        background: #1a1a1a;
+    }
+
+    #progress_fill {
+        height: 100%;
+        background: #3b82f6;
+        border: none;
+    }
+
+    #test_connection_btn {
+        background: #10b981;
+        border: solid #34d399;
+        color: #ffffff;
+        margin: 2 0;
+    }
+
+    #test_connection_btn:hover {
+        background: #059669;
+        border: solid #10b981;
     }
     """
     
@@ -238,6 +324,7 @@ class EnhancedSetupWizard(App):
             with Vertical():
                 with ScrollableContainer(id="content_scroll"):
                     yield Static(f"Step {self.current_step + 1}/{self.total_steps}", id="step_indicator", classes="step-indicator")
+                    yield Static(self._get_progress_bar(), id="progress_bar")
                     yield Static(self._get_step_title(), id="step_title")
                     yield Static(id="step_content")
                     yield Static(id="step_note")
@@ -251,6 +338,13 @@ class EnhancedSetupWizard(App):
     def on_mount(self) -> None:
         """Initialize wizard on mount"""
         self._update_step()
+    
+    def _get_progress_bar(self) -> str:
+        """Get visual progress bar"""
+        progress = (self.current_step + 1) / self.total_steps
+        filled = int(progress * 50)  # 50 character width
+        empty = 50 - filled
+        return f"[#3b82f6]{'█' * filled}[/#3b82f6][#444]{'░' * empty}[/#444]"
     
     def _get_step_title(self) -> str:
         """Get title for current step"""
@@ -275,6 +369,10 @@ class EnhancedSetupWizard(App):
         # Update step indicator
         step_indicator = self.query_one("#step_indicator", Static)
         step_indicator.update(f"Step {self.current_step + 1}/{self.total_steps}")
+        
+        # Update progress bar
+        progress_bar = self.query_one("#progress_bar", Static)
+        progress_bar.update(self._get_progress_bar())
         
         # Update title
         title = self.query_one("#step_title", Static)
@@ -332,66 +430,66 @@ class EnhancedSetupWizard(App):
     def _get_provider_content(self) -> str:
         """Get provider selection content"""
         return """
-        [bold]Select AI Provider[/bold]
-        
-        Choose the AI provider you want to use with Blonde CLI:
-        
-        • [bold]OpenRouter[/bold] - Access multiple models from various providers
-        • [bold]OpenAI[/bold] - Official OpenAI models (GPT-4, GPT-3.5)
-        • [bold]Anthropic[/bold] - Claude models (Claude 3 Opus, Sonnet, Haiku)
-        • [bold]Local[/bold] - Run models locally on your machine
-        
-        [dim]You can add more providers later in Settings.[/dim]
+[bold white]Select AI Provider[/bold white]
+
+[white]Choose the AI provider you want to use with Blonde CLI:[/white]
+
+[cyan]• OpenRouter[/cyan] - Access multiple models from various providers
+[cyan]• OpenAI[/cyan] - Official OpenAI models (GPT-4, GPT-3.5)
+[cyan]• Anthropic[/cyan] - Claude models (Claude 3 Opus, Sonnet, Haiku)
+[cyan]• Local[/cyan] - Run models locally on your machine
+
+[yellow]You can add more providers later in Settings.[/yellow]
         """
     
     def _get_model_content(self) -> str:
         """Get model selection content"""
-        return """[bold]Select Default Model[/bold]
+        return """[bold white]Select Default Model[/bold white]
 
-Choose the default model for your selected provider."""
+[white]Choose the default model for your selected provider.[/white]"""
     
     def _get_api_content(self) -> str:
         """Get API configuration content"""
-        return """[bold]Configure API Access[/bold]
+        return """[bold white]Configure API Access[/bold white]
 
-Enter your API key for the selected provider.
-[dim]Key stored securely via keyring.[/dim]"""
+[white]Enter your API key for the selected provider.[/white]
+[yellow]Key stored securely via keyring.[/yellow]"""
     
     def _get_blip_content(self) -> str:
         """Get Blip character selection content"""
-        return """[bold]Choose Blip Character[/bold]
+        return """[bold white]Choose Blip Character[/bold white]
 
-Your AI coding companion."""
+[white]Your AI coding companion.[/white]"""
     
     def _get_theme_content(self) -> str:
         """Get theme selection content"""
-        return """[bold]Choose UI Theme[/bold]
+        return """[bold white]Choose UI Theme[/bold white]
 
-Options: None, Auto, Light, Dark"""
+[white]Options: None, Auto, Light, Dark[/white]"""
     
     def _get_privacy_content(self) -> str:
         """Get privacy settings content"""
-        return """[bold]Privacy Settings[/bold]
+        return """[bold white]Privacy Settings[/bold white]
 
-Options: Strict, Balanced, Permissive"""
+[white]Options: Strict, Balanced, Permissive[/white]"""
     
     def _get_complete_content(self) -> str:
         """Get setup complete content"""
         config_summary = f"""
-        [bold green]✓ Setup Complete![/bold green]
-        
-        [bold]Configuration Summary:[/bold]
-        
-        Provider: [cyan]{self.selected_provider}[/cyan]
-        Model: [cyan]{self.custom_model or self.selected_model}[/cyan]
-        API Key: [cyan]{'✓ Configured' if self.api_key else '✗ Not configured'}[/cyan]
-        Blip Character: [cyan]{self.selected_blip_character}[/cyan]
-        Theme: [cyan]{self.selected_theme}[/cyan]
-        Privacy Mode: [cyan]{self.selected_privacy_mode}[/cyan]
-        
-        Configuration saved to: {CONFIG_FILE}
-        
-        Press [bold]Continue[/bold] to launch Blonde CLI, or [bold]Quit[/bold] to exit.
+[bold green]✓ Setup Complete![/bold green]
+
+[bold white]Configuration Summary:[/bold white]
+
+[white]Provider:[/white] [cyan]{self.selected_provider}[/cyan]
+[white]Model:[/white] [cyan]{self.custom_model or self.selected_model}[/cyan]
+[white]API Key:[/white] [cyan]{'✓ Configured' if self.api_key else '✗ Not configured'}[/cyan]
+[white]Blip Character:[/white] [cyan]{self.selected_blip_character}[/cyan]
+[white]Theme:[/white] [cyan]{self.selected_theme}[/cyan]
+[white]Privacy Mode:[/white] [cyan]{self.selected_privacy_mode}[/cyan]
+
+[yellow]Configuration saved to: {CONFIG_FILE}[/yellow]
+
+[white]Press [bold]Continue[/bold] to launch Blonde CLI, or [bold]Quit[/bold] to exit.[/white]
         """
         return config_summary
     
