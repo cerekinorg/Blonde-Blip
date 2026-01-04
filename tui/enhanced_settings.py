@@ -160,6 +160,13 @@ class EnhancedSettings(ModalScreen[None]):
                 options=[opt for opt in model_options],
                 id="model_select"
             )
+
+            yield Static("API Key:")
+            yield Input(
+                placeholder="Enter API key (OpenRouter/OpenAI/Anthropic)",
+                password=True,
+                id="provider_api_key"
+            )
             
             # Custom Model
             yield Static("[dim]Or specify custom model:[/dim]")
@@ -234,6 +241,22 @@ class EnhancedSettings(ModalScreen[None]):
         with Vertical(id="preferences_tab"):
             yield Static("[bold]Preferences[/bold]")
             yield Static()
+
+            yield Static("Default Agent:")
+            agent_options = [
+                ("Generator", "generator"),
+                ("Reviewer", "reviewer"),
+                ("Tester", "tester"),
+                ("Refactorer", "refactorer"),
+                ("Documenter", "documenter"),
+                ("Architect", "architect"),
+                ("Security", "security"),
+                ("Debugger", "debugger"),
+            ]
+            yield Select(
+                values=[opt for opt in agent_options],
+                id="default_agent_select"
+            )
             
             # Display Options
             yield Static("Display Options:")
@@ -358,42 +381,100 @@ class EnhancedSettings(ModalScreen[None]):
         # Set current values from config
         
         # Provider & Model
-        provider_select = self.query_one("#provider_select", Select)
-        if provider_select:
-            provider_select.value = self.config.get("default_provider", "openrouter")
-        
-        model_select = self.query_one("#model_select", Select)
-        if model_select:
-            providers_config = self.config.get("providers", {})
-            provider_data = providers_config.get(self.config.get("default_provider", "openrouter"), {})
+        provider = self.config.get("default_provider", "openrouter")
+        providers_config = self.config.get("providers", {})
+        provider_data = providers_config.get(provider, {})
+
+        try:
+            provider_select = self.query_one("#provider_select", Select)
+            provider_select.value = provider
+        except Exception:
+            pass
+
+        try:
+            model_select = self.query_one("#model_select", Select)
             model_select.value = provider_data.get('model', 'openai/gpt-4')
+        except Exception:
+            pass
+
+        try:
+            api_key_input = self.query_one("#provider_api_key", Input)
+            # Load API key from keyring
+            from tui.utils import load_api_key
+            key_name = f"{provider_select.value.upper()}_API_KEY"
+            api_key_input.value = load_api_key(key_name)
+        except Exception:
+            pass
         
         # Blip Character
         preferences = self.config.get("preferences", {})
-        blip_select = self.query_one("#blip_character_select", Select)
-        if blip_select:
+        try:
+            agent_select = self.query_one("#default_agent_select", Select)
+            agent_select.value = preferences.get("default_agent", "generator")
+        except Exception:
+            pass
+
+        try:
+            blip_select = self.query_one("#blip_character_select", Select)
             blip_select.value = preferences.get("blip_character", "axolotl")
+        except Exception:
+            pass
         
         # Animation Speed
-        anim_input = self.query_one("#animation_speed_input", Input)
-        if anim_input:
+        try:
+            anim_input = self.query_one("#animation_speed_input", Input)
             anim_input.value = str(preferences.get('blip_animation_speed', 0.3))
+        except Exception:
+            pass
         
         # Theme
-        theme_select = self.query_one("#theme_select", Select)
-        if theme_select:
+        try:
+            theme_select = self.query_one("#theme_select", Select)
             theme_select.value = preferences.get('colors', 'auto')
+        except Exception:
+            pass
         
         # Privacy Mode
-        privacy_select = self.query_one("#privacy_mode_select", Select)
-        if privacy_select:
+        try:
+            privacy_select = self.query_one("#privacy_mode_select", Select)
             privacy_select.value = preferences.get('privacy_mode', 'balanced')
+        except Exception:
+            pass
         
         # Load sessions list
         self._load_sessions_list()
         
         # Update Blip preview
         self._update_blip_preview()
+
+        self._update_current_status()
+
+    @on(Select.Changed, "#provider_select")
+    def on_provider_changed(self, event: Select.Changed) -> None:
+        """Handle provider change"""
+        provider = str(event.value)
+
+        try:
+            model_select = self.query_one("#model_select", Select)
+            model_options = self._get_model_options(provider)
+            model_select.set_options(model_options)
+            if model_select.options:
+                model_select.value = model_select.options[0][1]
+        except Exception:
+            pass
+
+        try:
+            providers_config = self.config.get("providers", {})
+            provider_data = providers_config.get(provider, {})
+            api_key_input = self.query_one("#provider_api_key", Input)
+            # Load API key from keyring
+            from tui.utils import load_api_key
+            key_name = f"{provider_select.value.upper()}_API_KEY"
+            api_key_input.value = load_api_key(key_name)
+        except Exception:
+            pass
+
+        self._update_current_status()
     
     def _load_sessions_list(self):
         """Load sessions into table"""
@@ -463,6 +544,8 @@ class EnhancedSettings(ModalScreen[None]):
             provider_select = self.query_one("#provider_select", Select)
             model_select = self.query_one("#model_select", Select)
             custom_model = self.query_one("#custom_model_input", Input)
+            api_key_input = self.query_one("#provider_api_key", Input)
+            agent_select = self.query_one("#default_agent_select", Select)
             blip_select = self.query_one("#blip_character_select", Select)
             anim_input = self.query_one("#animation_speed_input", Input)
             theme_select = self.query_one("#theme_select", Select)
@@ -475,12 +558,28 @@ class EnhancedSettings(ModalScreen[None]):
             autosave_files = self.query_one("#autosave_files_switch", Switch)
             
             # Build updated config
+            if 'providers' not in self.config or not isinstance(self.config.get('providers'), dict):
+                self.config['providers'] = {}
+            if 'preferences' not in self.config or not isinstance(self.config.get('preferences'), dict):
+                self.config['preferences'] = {}
+
             self.config['default_provider'] = provider_select.value
-            self.config['providers'][provider_select.value] = {
-                'model': custom_model.value.strip() if custom_model.value.strip() else model_select.value
-            }
+            if provider_select.value not in self.config['providers']:
+                self.config['providers'][provider_select.value] = {}
+
+            self.config['providers'][provider_select.value]['model'] = (
+                custom_model.value.strip() if custom_model.value.strip() else model_select.value
+            )
+
+            # Save API key securely using keyring
+            api_key = api_key_input.value.strip() if api_key_input else ""
+            if api_key:
+                from tui.utils import save_api_key
+                key_name = f"{provider_select.value.upper()}_API_KEY"
+                save_api_key(key_name, api_key)
             
             # Preferences
+            self.config['preferences']['default_agent'] = str(agent_select.value) if agent_select.value else "generator"
             self.config['preferences']['blip_character'] = blip_select.value
             self.config['preferences']['blip_animation_speed'] = float(anim_input.value or 0.3)
             self.config['preferences']['colors'] = theme_select.value
@@ -617,8 +716,11 @@ class EnhancedSettings(ModalScreen[None]):
             if provider_name not in self.config['providers']:
                 self.config['providers'][provider_name] = {}
             
+            # Save API key securely using keyring
             if api_key:
-                self.config['providers'][provider_name]['api_key'] = api_key
+                from tui.utils import save_api_key
+                key_name = f"{provider_name.upper()}_API_KEY"
+                save_api_key(key_name, api_key)
             
             final_model = custom_model if custom_model else model
             if final_model:

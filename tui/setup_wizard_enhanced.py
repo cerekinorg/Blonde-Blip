@@ -35,78 +35,115 @@ class EnhancedSetupWizard(App):
     
     CSS = """
     Screen {
+        background: #0b0b0b;
         layout: grid;
         grid-size: 1 1;
     }
-    
+
     #setup_container {
-        border: solid $primary;
-        background: $panel;
+        border: solid #444;
+        background: #1a1a1a;
         padding: 2;
         margin: 1;
+        width: 80;
+        height: auto;
+        align: center middle;
     }
-    
+
     #step_title {
         text-align: center;
         text-style: bold;
         padding: 1;
-        color: $accent;
+        color: #3b82f6;
     }
-    
+
     #step_content {
         padding: 1;
+        background: #202020;
+        border: solid #444;
+        margin: 1 0;
     }
-    
+
     Button {
         width: 20;
         margin: 1;
+        background: #333;
+        border: solid #555;
     }
-    
+
     #continue_btn {
-        variant: primary;
+        background: #3b82f6;
+        border: solid #3b82f6;
     }
-    
+
     #skip_btn {
-        variant: default;
+        background: #444;
+        border: solid #666;
+        color: #aaa;
     }
-    
+
     Input {
         margin: 1 0;
         width: 100%;
+        background: #111;
+        border: solid #444;
+        color: #d6d6d6;
     }
-    
+
+    Input:focus {
+        border: solid #3b82f6;
+    }
+
     Select {
         margin: 1 0;
         width: 100%;
+        background: #111;
+        border: solid #444;
     }
-    
+
     RadioSet, RadioButton {
         margin: 1 0;
+        color: #d6d6d6;
     }
-    
+
     .step-indicator {
         text-align: center;
         text-style: dim;
         padding: 1;
+        color: #888;
     }
-    
+
     .required-note {
         text-style: bold;
-        color: $warning;
+        color: #ef4444;
         padding: 1;
     }
-    
+
     .optional-note {
         text-style: dim;
         padding: 1;
+        color: #888;
     }
-    
+
     .blip-preview {
         text-align: center;
         padding: 1;
         margin: 1 0;
-        border: solid $primary;
-        background: $surface;
+        border: solid #444;
+        background: #111;
+    }
+
+    .provider-option {
+        padding: 1;
+        margin: 1 0;
+        background: #252525;
+        border: solid #444;
+        color: #d6d6d6;
+    }
+
+    .provider-option:hover {
+        background: #2a2a2a;
+        border: solid #555;
     }
     """
     
@@ -631,8 +668,11 @@ class EnhancedSetupWizard(App):
                 "model": self.custom_model if self.custom_model else self.selected_model
             }
             
+            # Save API key securely using keyring
             if self.api_key:
-                provider_config["api_key"] = self.api_key
+                from tui.utils import save_api_key
+                key_name = f"{self.selected_provider.upper()}_API_KEY"
+                save_api_key(key_name, self.api_key)
             
             self.config_data["providers"][self.selected_provider] = provider_config
             self.config_data["setup_completed"] = True

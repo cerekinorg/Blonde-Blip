@@ -264,9 +264,9 @@ class WelcomeScreen(App):
                             id="search_input",
                         )
                     with Horizontal(id="chips_row"):
-                        yield Static("[bold #3b82f6]Build[/bold #3b82f6]", classes="chip")
-                        yield Static("[bold]Big Pickle[/bold]", classes="chip")
-                        yield Static("[dim]Blonde Zen[/dim]", classes="chip")
+                        yield Static("[bold #3b82f6]Provider[/bold #3b82f6]", classes="chip", id="chip_provider")
+                        yield Static("[bold]Model[/bold]", classes="chip", id="chip_model")
+                        yield Static("[dim]Agent[/dim]", classes="chip", id="chip_agent")
 
                 yield Static("[bold]tab[/bold] switch agent   [bold]ctrl+p[/bold] commands", id="hints")
 
@@ -313,6 +313,27 @@ class WelcomeScreen(App):
         
         # Update provider/model badges
         self._update_provider_model_badges()
+
+        self._update_chips_and_hints(config)
+
+    def _update_chips_and_hints(self, config: Dict[str, Any]) -> None:
+        provider = config.get('default_provider', 'openrouter')
+        providers = config.get('providers', {})
+        model = providers.get(provider, {}).get('model', 'openai/gpt-4')
+        agent = config.get('preferences', {}).get('default_agent', 'generator')
+
+        try:
+            chip_provider = self.query_one("#chip_provider", Static)
+            chip_model = self.query_one("#chip_model", Static)
+            chip_agent = self.query_one("#chip_agent", Static)
+            hints = self.query_one("#hints", Static)
+
+            chip_provider.update(f"[bold #3b82f6]{provider}[/bold #3b82f6]")
+            chip_model.update(f"[bold]{model}[/bold]")
+            chip_agent.update(f"[dim]{agent}[/dim]")
+            hints.update(f"[bold]tab[/bold] switch agent ({agent})   [bold]ctrl+p[/bold] commands")
+        except Exception:
+            pass
     
     def _update_provider_model_badges(self) -> None:
         """Update provider/model display badges"""
