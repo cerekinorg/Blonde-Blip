@@ -58,9 +58,6 @@ class EnhancedSetupWizard(App):
         height: 1fr;
         max-height: 100%;
         overflow-y: auto;
-        scrollbar-size: 1;
-        scrollbar-track-color: #1a1a1a;
-        scrollbar-thumb-color: #444;
     }
 
     #button_container {
