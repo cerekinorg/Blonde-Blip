@@ -4,7 +4,7 @@ Shows streaming thoughts that collapse to "Thought for X s" when complete
 """
 
 from textual.widgets import Static, Button, LoadingIndicator
-from textual.containers import Vertical, Container
+from textual.containers import Vertical, Container, Horizontal
 from textual import on
 from textual.reactive import reactive
 from typing import Optional, Dict, List

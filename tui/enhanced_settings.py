@@ -140,6 +140,10 @@ class EnhancedSettings(ModalScreen[None]):
             yield Static("[bold]AI Provider & Model[/bold]")
             yield Static()
             
+            # Connect Provider Button
+            yield Button("Connect Provider", id="connect_provider_btn", variant="primary")
+            yield Static()  # Spacer
+            
             # Provider Selection
             yield Static("Provider:")
             provider_options = [
@@ -279,6 +283,21 @@ class EnhancedSettings(ModalScreen[None]):
                 value=preferences.get('show_diff', True),
                 label="Show Diff (auto on file edits)",
                 id="show_diff_switch"
+            )
+            
+            yield Static()  # Spacer
+            
+            # Panel Visibility Options
+            yield Static("Panel Visibility:")
+            yield Switch(
+                value=preferences.get('show_left_panel', True),
+                label="Show Left Panel (Blip)",
+                id="show_left_panel_switch"
+            )
+            yield Switch(
+                value=preferences.get('show_right_panel', True),
+                label="Show Right Panel (Session + Agent Thinking)",
+                id="show_right_panel_switch"
             )
             
             yield Static()  # Spacer
@@ -441,6 +460,19 @@ class EnhancedSettings(ModalScreen[None]):
         except Exception:
             pass
         
+        # Panel Visibility Switches
+        try:
+            show_left_panel_switch = self.query_one("#show_left_panel_switch", Switch)
+            show_left_panel_switch.value = preferences.get('show_left_panel', True)
+        except Exception:
+            pass
+        
+        try:
+            show_right_panel_switch = self.query_one("#show_right_panel_switch", Switch)
+            show_right_panel_switch.value = preferences.get('show_right_panel', True)
+        except Exception:
+            pass
+        
         # Load sessions list
         self._load_sessions_list()
         
@@ -554,6 +586,8 @@ class EnhancedSettings(ModalScreen[None]):
             show_tips = self.query_one("#show_tips_switch", Switch)
             show_thinking = self.query_one("#show_thinking_switch", Switch)
             show_diff = self.query_one("#show_diff_switch", Switch)
+            show_left_panel = self.query_one("#show_left_panel_switch", Switch)
+            show_right_panel = self.query_one("#show_right_panel_switch", Switch)
             stream_responses = self.query_one("#stream_responses_switch", Switch)
             autosave_files = self.query_one("#autosave_files_switch", Switch)
             
@@ -588,8 +622,35 @@ class EnhancedSettings(ModalScreen[None]):
             self.config['preferences']['show_tips'] = show_tips.value
             self.config['preferences']['show_agent_thinking'] = show_thinking.value
             self.config['preferences']['show_diff'] = show_diff.value
+            self.config['preferences']['show_left_panel'] = show_left_panel.value
+            self.config['preferences']['show_right_panel'] = show_right_panel.value
             self.config['preferences']['stream_responses'] = stream_responses.value
             self.config['preferences']['autosave_files'] = autosave_files.value
+            
+            # Apply panel visibility to dashboard if available
+            try:
+                dashboard = self.app
+                if hasattr(dashboard, 'left_visible') and hasattr(dashboard, 'right_visible'):
+                    dashboard.left_visible = show_left_panel.value
+                    dashboard.right_visible = show_right_panel.value
+                    
+                    # Update panel visibility
+                    left_panel = dashboard.query_one("#left_panel")
+                    right_panel = dashboard.query_one("#right_panel")
+                    
+                    if left_panel:
+                        if show_left_panel.value:
+                            left_panel.remove_class("hidden")
+                        else:
+                            left_panel.add_class("hidden")
+                    
+                    if right_panel:
+                        if show_right_panel.value:
+                            right_panel.remove_class("hidden")
+                        else:
+                            right_panel.add_class("hidden")
+            except:
+                pass
             
             # Save to file
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -682,6 +743,20 @@ class EnhancedSettings(ModalScreen[None]):
     def on_import_settings(self) -> None:
         """Handle import settings button"""
         self.notify("Import settings coming soon!", severity="information")
+    
+    @on(Button.Pressed, "#connect_provider_btn")
+    def on_connect_provider(self) -> None:
+        """Handle connect provider button"""
+        # Show provider configuration dialog
+        from tui.provider_manager import ProviderManager
+        try:
+            provider_manager = ProviderManager()
+            # This will open interactive provider setup
+            self.notify("Opening provider connection dialog...", severity="information")
+            # For now, show a notification - full implementation would open a dialog
+            self.notify("Use the 'Add Provider' buttons below to configure providers", severity="information")
+        except Exception as e:
+            self.notify(f"Error connecting provider: {e}", severity="error")
     
     # Quick Configuration Button Handlers (NEW)
     @on(Button.Pressed, "#add_openrouter_btn")

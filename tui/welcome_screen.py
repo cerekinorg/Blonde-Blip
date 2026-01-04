@@ -375,7 +375,7 @@ class WelcomeScreen(App):
         self.app.exit()
     
     def action_start_session(self) -> None:
-        """Start a new session and launch dashboard"""
+        """Start a new session and exit with session data"""
         try:
             search_input = self.query_one("#search_input", ChatInput)
             self.first_prompt = search_input.value.strip()
@@ -386,6 +386,13 @@ class WelcomeScreen(App):
         provider = config.get('default_provider', 'openrouter')
         providers = config.get('providers', {})
         model = providers.get(provider, {}).get('model', 'openai/gpt-4')
+        
+        session_data = {
+            'session_id': None,
+            'first_prompt': self.first_prompt,
+            'provider': str(provider),
+            'model': str(model)
+        }
         
         # Create session
         if MANAGERS_AVAILABLE:
@@ -399,29 +406,20 @@ class WelcomeScreen(App):
             if self.first_prompt:
                 self.session_manager.update_chat_history("user", self.first_prompt)
             
-            # Mark session as started
+            session_data['session_id'] = session_id
+            
             self.session_started = True
             
-            # Call callback to launch dashboard
-            if self.on_start_callback:
-                self.on_start_callback(
-                    session_id=session_id,
-                    first_prompt=self.first_prompt,
-                    provider=str(provider),
-                    model=str(model)
-                )
-            else:
-                self.notify(
-                    f"Session started! Provider: {provider}, Model: {model}",
-                    title="Session Started",
-                    severity="information"
-                )
+            # Exit with session data
+            self.exit(result=session_data)
         else:
             self.notify(
                 "Session managers not available",
                 title="Error",
                 severity="error"
             )
+            # Still exit with available data
+            self.exit(result=session_data)
     
     def action_show_settings(self) -> None:
         """Show settings modal"""

@@ -100,26 +100,41 @@ class SessionPanel(Vertical):
     
     def watch_session_name(self, old_name, new_name):
         """Update session name display"""
-        display = self.query_one("#session_name_display", Static)
-        if display:
-            display.update(new_name)
+        try:
+            display = self.query_one("#session_name_display", Static)
+            if display:
+                display.update(new_name)
+        except:
+            pass
     
     def watch_provider(self, old_provider, new_provider):
         """Update provider display"""
-        self._update_model_provider_display()
+        try:
+            self._update_model_provider_display()
+        except:
+            pass
     
     def watch_model(self, old_model, new_model):
         """Update model display"""
-        self._update_model_provider_display()
+        try:
+            self._update_model_provider_display()
+        except:
+            pass
     
     def watch_blip_character(self, old_character, new_character):
         """Update Blip preview"""
-        self._update_blip_preview()
+        try:
+            self._update_blip_preview()
+        except:
+            pass
     
     def watch_context_percentage(self, old_pct, new_pct):
         """Update context display and progress bar"""
-        display = self.query_one("#context_display", Static)
-        progress = self.query_one("#context_progress", ProgressBar)
+        try:
+            display = self.query_one("#context_display", Static)
+            progress = self.query_one("#context_progress", ProgressBar)
+        except:
+            return
         
         if display:
             # Color-coded based on percentage
@@ -144,38 +159,49 @@ class SessionPanel(Vertical):
     
     def watch_cost_total(self, old_cost, new_cost):
         """Update cost display"""
-        display = self.query_one("#cost_display", Static)
-        estimate = self.query_one("#cost_estimate_display", Static)
+        try:
+            display = self.query_one("#cost_display", Static)
+            estimate = self.query_one("#cost_estimate_display", Static)
+        except:
+            return
         
         if display:
             display.update(f"${new_cost:.4f}")
         
         if estimate and self.session_manager:
-            # Estimate cost for next prompt
-            session_data = self.session_manager.current_session_data
-            context_usage = session_data.get("context_usage", {})
-            total_tokens = context_usage.get("total_tokens", 0)
-            
-            if total_tokens > 0:
-                avg_cost_per_token = new_cost / total_tokens
-                estimated = avg_cost_per_token * 1000  # Assume 1000 tokens next prompt
-                estimate.update(f"[dim]~${estimated:.6f} / 1K tokens[/dim]")
+            try:
+                session_data = self.session_manager.current_session_data
+                context_usage = session_data.get("context_usage", {})
+                total_tokens = context_usage.get("total_tokens", 0)
+                
+                if total_tokens > 0:
+                    avg_cost_per_token = new_cost / total_tokens
+                    estimated = avg_cost_per_token * 1000
+                    estimate.update(f"[dim]~${estimated:.6f} / 1K tokens[/dim]")
+            except:
+                pass
     
     def _update_model_provider_display(self):
         """Update model and provider display"""
-        display = self.query_one("#model_provider_display", Static)
-        if display:
-            display.update(f"[cyan]{self.provider}[/cyan]\n[dim]{self.model}[/dim]")
+        try:
+            display = self.query_one("#model_provider_display", Static)
+            if display:
+                display.update(f"[cyan]{self.provider}[/cyan]\n[dim]{self.model}[/dim]")
+        except:
+            pass
     
     def _update_blip_preview(self):
         """Update Blip character preview"""
-        display = self.query_one("#blip_preview", Static)
-        
-        if display and self.blip_manager:
-            character_name = self.blip_manager.current_character_name
-            art = self.blip_manager.get_art("happy")
-            color = self.blip_manager.get_color("happy")
-            display.update(f"[{color}]{art}[/{color}]\n[dim]{character_name}[/dim]")
+        try:
+            display = self.query_one("#blip_preview", Static)
+            
+            if display and self.blip_manager:
+                character_name = self.blip_manager.current_character_name
+                art = self.blip_manager.get_art("happy")
+                color = self.blip_manager.get_color("happy")
+                display.update(f"[{color}]{art}[/{color}]\n[dim]{character_name}[/dim]")
+        except:
+            pass
     
     def _update_display(self):
         """Update all displays"""

@@ -6,7 +6,7 @@ Central hub integrating all components with collapsible panels
 from textual.app import App, ComposeResult
 from textual.widgets import (
     Header, Footer, Static, DirectoryTree, 
-    RichLog, Input, Button, ContentSwitcher
+    RichLog, Input, Button, ContentSwitcher, LoadingIndicator
 )
 from textual.containers import Horizontal, Vertical, Container
 from textual import on, events
@@ -26,6 +26,7 @@ try:
     from .diff_panel import DiffPanel
     from .agent_thinking_panel import AgentThinkingPanel
     from .context_tracker import ContextTracker
+    from .query_processor import get_query_processor, QueryResult
     MANAGERS_AVAILABLE = True
 except ImportError:
     try:
@@ -38,6 +39,7 @@ except ImportError:
         from diff_panel import DiffPanel
         from agent_thinking_panel import AgentThinkingPanel
         from context_tracker import ContextTracker
+        from query_processor import get_query_processor, QueryResult
         MANAGERS_AVAILABLE = True
     except ImportError:
         MANAGERS_AVAILABLE = False
@@ -113,11 +115,29 @@ class ChatPanel(Vertical):
             self.session_manager = get_session_manager()
     
     def compose(self) -> ComposeResult:
+        # View mode indicator
+        yield Static(id="view_mode_indicator")
+        
         with ContentSwitcher(id="view_switcher"):
-            # Chat view
+            # Chat view - Enhanced with inline agent thinking and diff
             with Vertical(id="chat_view"):
-                yield RichLog(id="chat_log", wrap=True, highlight=True)
+                # Prompt input at top (always visible)
                 yield Input(placeholder="Type your message here...", id="chat_input")
+                
+                # Inline agent thinking display
+                if MANAGERS_AVAILABLE:
+                    yield Static(id="agent_thinking_inline")
+                else:
+                    yield Static("Agent thinking not available", id="agent_thinking_inline")
+                
+                # Inline diff display
+                if MANAGERS_AVAILABLE:
+                    yield Static(id="diff_display_inline")
+                else:
+                    yield Static("Diff not available", id="diff_display_inline")
+                
+                # Chat log as main content
+                yield RichLog(id="chat_log", wrap=True, highlight=True)
             
             # File editor view
             with Vertical(id="editor_view"):
@@ -126,7 +146,7 @@ class ChatPanel(Vertical):
                 else:
                     yield Static("File editor not available")
             
-            # Diff view
+            # Diff view (full screen)
             with Vertical(id="diff_view"):
                 if MANAGERS_AVAILABLE:
                     yield DiffPanel()
@@ -136,6 +156,9 @@ class ChatPanel(Vertical):
     def on_mount(self) -> None:
         self.chat_log = self.query_one("#chat_log", RichLog)
         self.view_switcher = self.query_one("#view_switcher", ContentSwitcher)
+        self._update_view_mode_indicator()
+        self._update_agent_thinking_inline("")
+        self._update_diff_display_inline("")
         self.add_message("system", "Welcome to Blonde CLI! Type your message or use Ctrl+S for settings.")
     
     def add_message(self, role: str, content: str) -> None:
@@ -164,12 +187,109 @@ class ChatPanel(Vertical):
             self.process_message(message)
     
     def process_message(self, message: str) -> None:
-        """Process user message"""
-        # TODO: Integrate with actual LLM
-        if message.startswith("/"):
-            self.add_message("system", f"Command: {message}")
+        """Process user message using the agent system"""
+        # Update Blip to thinking state
+        try:
+            blip_widget = self.app.query_one(BlipWidget)
+            if blip_widget:
+                blip_widget.state = "thinking"
+                blip_widget.message = "Processing your request..."
+        except:
+            pass
+        
+        # Show loading indicator
+        self._show_loading(True)
+        
+        # Process in background
+        def process_query():
+            try:
+                query_processor = get_query_processor()
+                
+                # Create progress callback for thinking panel
+                def progress_callback(agent: str, status: str):
+                    try:
+                        # Update right panel thinking
+                        thinking_panel = self.app.query_one(AgentThinkingPanel)
+                        if thinking_panel:
+                            thinking_panel.add_thought(agent, status)
+                        
+                        # Update inline thinking in center panel
+                        self.app.call_from_thread(self._update_agent_thinking_inline, f"{agent}: {status}")
+                    except:
+                        pass
+                
+                # Process the query
+                result: QueryResult = query_processor.process_query(
+                    query=message,
+                    context={"current_dir": str(Path.cwd())},
+                    progress_callback=progress_callback
+                )
+                
+                # Return to main thread for UI updates
+                self.app.call_from_thread(self._on_query_complete, result)
+                
+            except Exception as e:
+                self.app.call_from_thread(self._on_query_error, str(e))
+        
+        # Run in thread to not block UI
+        import threading
+        thread = threading.Thread(target=process_query, daemon=True)
+        thread.start()
+    
+    def _show_loading(self, show: bool) -> None:
+        """Show or hide loading indicator"""
+        try:
+            chat_log = self.query_one("#chat_log", RichLog)
+            if show:
+                chat_log.write("[cyan]Thinking...[/cyan]")
+        except:
+            pass
+    
+    def _on_query_complete(self, result: QueryResult) -> None:
+        """Handle query processing complete"""
+        self._show_loading(False)
+        
+        # Update Blip
+        try:
+            blip_widget = self.app.query_one(BlipWidget)
+            if blip_widget:
+                if result.success:
+                    blip_widget.state = "happy"
+                    blip_widget.message = "Task complete!"
+                else:
+                    blip_widget.state = "sad"
+                    blip_widget.message = result.error or "Task failed"
+        except:
+            pass
+        
+        # Add response to chat
+        if result.code_output:
+            self.add_message("assistant", f"{result.response}\n\n```\n{result.code_output}\n```")
         else:
-            self.add_message("assistant", "Processing...")
+            self.add_message("assistant", result.response)
+        
+        # End any pending thoughts
+        try:
+            thinking_panel = self.app.query_one(AgentThinkingPanel)
+            if thinking_panel:
+                thinking_panel.end_thought(result.agent_used)
+        except:
+            pass
+    
+    def _on_query_error(self, error: str) -> None:
+        """Handle query processing error"""
+        self._show_loading(False)
+        
+        # Update Blip
+        try:
+            blip_widget = self.app.query_one(BlipWidget)
+            if blip_widget:
+                blip_widget.state = "sad"
+                blip_widget.message = f"Error: {error[:50]}..."
+        except:
+            pass
+        
+        self.add_message("error", f"Error processing your request: {error}")
     
     def switch_to_editor(self, file_path: Path) -> None:
         """Switch to file editor view"""
@@ -186,6 +306,7 @@ class ChatPanel(Vertical):
                         file_editor.file_path = file_path
                 except:
                     pass
+        self._update_view_mode_indicator()
     
     def switch_to_diff(self, file_path: Path, old_content: str, new_content: str) -> None:
         """Switch to diff view"""
@@ -202,6 +323,29 @@ class ChatPanel(Vertical):
                         diff_panel.load_diff(file_path, old_content, new_content)
                 except:
                     pass
+        
+        # Also update inline diff display
+        try:
+            from difflib import unified_diff
+            diff_lines = list(unified_diff(
+                old_content.splitlines(),
+                new_content.splitlines(),
+                fromfile=f"{file_path.name} (old)",
+                tofile=f"{file_path.name} (new)",
+                lineterm=""
+            ))
+            diff_text = "\n".join(diff_lines[:20])  # Show first 20 lines
+            if len(diff_lines) > 20:
+                diff_text += f"\n... ({len(diff_lines) - 20} more lines)"
+            self._update_diff_display_inline(diff_text)
+        except:
+            pass
+        
+        self._update_view_mode_indicator()
+    
+    def watch_current_view(self, old_view: str, new_view: str) -> None:
+        """Watch for current view changes"""
+        self._update_view_mode_indicator()
     
     def switch_to_chat(self) -> None:
         """Switch back to chat view"""
@@ -209,6 +353,46 @@ class ChatPanel(Vertical):
         if self.view_switcher:
             self.view_switcher.current = "chat_view"
             self.border_title = "Chat"
+        self._update_view_mode_indicator()
+    
+    def _update_view_mode_indicator(self) -> None:
+        """Update view mode indicator"""
+        try:
+            indicator = self.query_one("#view_mode_indicator", Static)
+            if indicator:
+                mode_colors = {
+                    "chat": "cyan",
+                    "editor": "yellow",
+                    "diff": "green"
+                }
+                color = mode_colors.get(self.current_view, "white")
+                indicator.update(f"[{color}]Mode: {self.current_view.upper()}[/{color}] | Press Ctrl+E or Esc to return to chat")
+        except:
+            pass
+    
+    def _update_agent_thinking_inline(self, content: str) -> None:
+        """Update inline agent thinking display"""
+        try:
+            thinking_display = self.query_one("#agent_thinking_inline", Static)
+            if thinking_display:
+                if content:
+                    thinking_display.update(f"[bold cyan]Agent Thinking:[/bold cyan]\n{content}")
+                else:
+                    thinking_display.update("[dim]No active agent thoughts[/dim]")
+        except:
+            pass
+    
+    def _update_diff_display_inline(self, content: str) -> None:
+        """Update inline diff display"""
+        try:
+            diff_display = self.query_one("#diff_display_inline", Static)
+            if diff_display:
+                if content:
+                    diff_display.update(f"[bold green]Changes:[/bold green]\n{content}")
+                else:
+                    diff_display.update("[dim]No changes to display[/dim]")
+        except:
+            pass
 
 
 class Dashboard(App):
@@ -218,11 +402,15 @@ class Dashboard(App):
     Screen {
         layout: grid;
         grid-size: 3 1;
+        grid-columns: 1fr 3fr 2fr;
     }
     
     #left_panel {
         border: solid $primary;
         background: $panel;
+        width: 20;
+        min-width: 15;
+        max-width: 25;
     }
     
     #left_panel.hidden {
@@ -246,11 +434,7 @@ class Dashboard(App):
     BlipWidget {
         padding: 1;
         margin: 1;
-    }
-    
-    WorkingDirectoryDisplay {
-        padding: 1;
-        background: $panel;
+        height: auto;
     }
     
     ChatPanel {
@@ -264,6 +448,25 @@ class Dashboard(App):
     
     #chat_input {
         margin-top: 1;
+    }
+    
+    #agent_thinking_inline {
+        height: 8;
+        max-height: 12;
+        border: solid $primary;
+        background: $panel;
+    }
+    
+    #diff_display_inline {
+        height: 8;
+        max-height: 12;
+        border: solid $primary;
+        background: $panel;
+    }
+    
+    #view_mode_indicator {
+        padding: 1;
+        background: $boost;
     }
     
     SessionPanel {
@@ -283,6 +486,8 @@ class Dashboard(App):
         ("ctrl+m", "show_model_switcher", "Model Switcher"),
         ("ctrl+l", "toggle_left_panel", "Toggle Left Panel"),
         ("ctrl+r", "toggle_right_panel", "Toggle Right Panel"),
+        ("ctrl+e", "switch_to_chat", "Switch to Chat"),
+        ("escape", "switch_to_chat", "Switch to Chat"),
         ("f1", "show_help", "Help")
     ]
     
@@ -302,25 +507,15 @@ class Dashboard(App):
             self.session_manager = get_session_manager()
     
     def compose(self) -> ComposeResult:
-        # Left Panel (Collapsible - Ctrl+L)
+        # Left Panel (Collapsible - Ctrl+L) - Only Blip
         with Container(id="left_panel"):
-            yield WorkingDirectoryDisplay()
             yield BlipWidget()
-            
-            # Context Tracker
-            if MANAGERS_AVAILABLE:
-                yield ContextTracker()
-            else:
-                yield Static("Context tracker not available")
-            
-            with Vertical(id="tree_container"):
-                yield DirectoryTree(str(Path.cwd()), id="file_browser")
         
-        # Center Panel
+        # Center Panel - Enhanced with integrated prompt, agents, and diff
         with Container(id="center_panel"):
             yield ChatPanel()
         
-        # Right Panel (Collapsible - Ctrl+R)
+        # Right Panel (Collapsible - Ctrl+R) - Session info
         with Container(id="right_panel"):
             session_panel = SessionPanel()
             
@@ -330,7 +525,7 @@ class Dashboard(App):
             
             yield session_panel
             
-            # Agent Thinking Panel
+            # Agent Thinking Panel (also shown inline in center)
             if MANAGERS_AVAILABLE:
                 yield AgentThinkingPanel()
             else:
@@ -340,35 +535,62 @@ class Dashboard(App):
         self.title = "Blonde CLI - Dashboard"
         self.sub_title = "Multi-Agent AI Development Assistant"
         
+        # Load panel visibility from config
+        try:
+            if CONFIG_FILE.exists():
+                with open(CONFIG_FILE, 'r') as f:
+                    config = json.load(f)
+                    preferences = config.get('preferences', {})
+                    self.left_visible = preferences.get('show_left_panel', True)
+                    self.right_visible = preferences.get('show_right_panel', True)
+                    
+                    # Apply visibility
+                    left_panel = self.query_one("#left_panel")
+                    right_panel = self.query_one("#right_panel")
+                    
+                    if left_panel:
+                        if not self.left_visible:
+                            left_panel.add_class("hidden")
+                        else:
+                            left_panel.remove_class("hidden")
+                    
+                    if right_panel:
+                        if not self.right_visible:
+                            right_panel.add_class("hidden")
+                        else:
+                            right_panel.remove_class("hidden")
+        except Exception:
+            pass
+        
         # Handle first prompt if provided
-        if self.first_prompt and MANAGERS_AVAILABLE:
+        if self.first_prompt:
             chat_panel = self.query_one(ChatPanel)
             if chat_panel:
                 chat_panel.add_message("user", self.first_prompt)
+                # Process the first prompt through agent system
                 chat_panel.process_message(self.first_prompt)
+        else:
+            # Show welcome message
+            chat_panel = self.query_one(ChatPanel)
+            if chat_panel:
+                chat_panel.add_message("system", "Welcome to Blonde CLI! I'm your AI development assistant.\n\nI can help you with:\n• Code generation and implementation\n• Code review and quality analysis\n• Debugging and fixing issues\n• Writing tests\n• Refactoring code\n• Security analysis\n• Architecture design\n• Documentation\n• Performance optimization\n\nType your request or use /commands for special actions.")
         
         # Set Blip to happy
         if self.blip_manager:
-            blip_widget = self.query_one(BlipWidget)
-            if blip_widget:
-                blip_widget.message = "Ready to help!"
-                blip_widget.state = "happy"
-    
-    @on(DirectoryTree.FileSelected)
-    def on_file_selected(self, event: DirectoryTree.FileSelected) -> None:
-        path = Path(event.path)
-        
-        # Open file in center panel
-        chat_panel = self.query_one(ChatPanel)
-        if chat_panel and path.is_file():
-            chat_panel.switch_to_editor(path)
-            
-            # Update blip
-            if MANAGERS_AVAILABLE and self.blip_manager:
+            try:
                 blip_widget = self.query_one(BlipWidget)
                 if blip_widget:
-                    blip_widget.message = f"Editing: {path.name}"
-                    blip_widget.state = "working"
+                    blip_widget.message = "Ready to help!"
+                    blip_widget.state = "happy"
+            except:
+                pass
+    
+    def action_switch_to_chat(self) -> None:
+        """Switch center panel back to chat/prompt mode"""
+        chat_panel = self.query_one(ChatPanel)
+        if chat_panel:
+            chat_panel.switch_to_chat()
+            self.notify("Switched to chat mode", severity="information")
     
     def action_toggle_left_panel(self) -> None:
         """Toggle left panel visibility"""
@@ -418,8 +640,9 @@ class Dashboard(App):
         [bold cyan]Blonde CLI - Dashboard Help[/bold cyan]
         
         [cyan]Keyboard Shortcuts:[/cyan]
-        Ctrl+L - Toggle Left Panel (Blip + Context + Files)
+        Ctrl+L - Toggle Left Panel (Blip)
         Ctrl+R - Toggle Right Panel (Session + Agent Thinking)
+        Ctrl+E / Esc - Switch to Chat/Prompt Mode
         Ctrl+S - Enhanced Settings (5 tabs)
         Ctrl+M - Model/Provider Switcher
         F1 - Help
@@ -427,12 +650,12 @@ class Dashboard(App):
         
         [cyan]Features:[/cyan]
         • 3-column layout with collapsible panels
+        • Left panel: Blip mascot (Terminal pet)
+        • Center panel: Prompt input, agent thinking, diff, and chat/editor
+        • Right panel: Session info and agent thinking
         • Real-time session information and cost tracking
         • Interactive chat with file editor and diff view
-        • Blip mascot guidance with 4 characters
-        • File browser with integrated editor
         • Agent thinking panel with streaming thoughts
-        • Context tracker with token warnings
         • Enhanced settings with 5 comprehensive tabs
         • Quick model/provider switcher
         """
@@ -450,14 +673,6 @@ class Dashboard(App):
             session_panel = self.query_one(SessionPanel)
             if session_panel:
                 session_panel.update_from_session(session_data)
-        except:
-            pass
-        
-        # Update context tracker
-        try:
-            context_tracker = self.query_one(ContextTracker)
-            if context_tracker:
-                context_tracker.update_session_data(session_data)
         except:
             pass
         

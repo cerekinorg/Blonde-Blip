@@ -4,7 +4,7 @@ Edit files in center column with 2-second debounce autosave
 """
 
 from textual.widgets import Static, Button, TextArea, Label
-from textual.containers import Vertical, Container
+from textual.containers import Vertical, Container, Horizontal
 from textual import on
 from textual.reactive import reactive
 from pathlib import Path
@@ -41,8 +41,7 @@ class FileEditor(Vertical):
             id="editor_textarea",
             language="python",
             theme="monokai",
-            show_line_numbers=True,
-            tab_behaviour="indent"
+            show_line_numbers=True
         )
         
         yield Static()  # Spacer

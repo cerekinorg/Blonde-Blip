@@ -154,6 +154,20 @@ class DiffPanel(Vertical):
         self.current_file = None
         self._update_display()
     
+    def load_diff(self, file_path: Path, old_content: str, new_content: str) -> None:
+        """
+        Load diff from file content
+        
+        Args:
+            file_path: Path to the file
+            old_content: Original file content
+            new_content: New file content
+        """
+        self.current_file = file_path
+        diffs = parse_simple_diff(str(file_path), old_content, new_content)
+        self.diffs = diffs
+        self._update_display()
+    
     def apply_all(self):
         """Apply all diffs"""
         for diff in self.diffs:
