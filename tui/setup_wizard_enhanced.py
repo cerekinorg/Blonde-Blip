@@ -71,7 +71,6 @@ class EnhancedSetupWizard(App):
         grid-size: 4 1;
         grid-columns: auto auto auto auto;
         align: center middle;
-        column-gap: 1;
     }
 
     Button {
@@ -96,7 +95,6 @@ class EnhancedSetupWizard(App):
         padding: 1;
         color: #60a5fa;
         margin-bottom: 1;
-        font-size: 110%;
     }
 
     #step_content {
