@@ -893,13 +893,11 @@ class QueryProcessor:
             )
     
     def _handle_general_chat(
-        self, 
-        query: str, 
+        self,
+        query: str,
         context: Dict[str, Any],
         progress_callback
     ) -> QueryResult:
-
-            files_modified=files_modified,\n
         """Handle general chat queries"""
         thinking_steps = [
             "Processing general query",
@@ -953,23 +951,6 @@ class QueryProcessor:
                     files_modified=files_modified,
                     success=True
                 )
-            else:
-                return QueryResult(
-                    query_type=QueryType.GENERAL_CHAT,
-                    response="I can help with code generation, review, debugging, testing, refactoring, security analysis, architecture design, documentation, and optimization. What would you like to work on?",
-                    agent_used="assistant",
-                    thinking_steps=thinking_steps,
-                    success=True
-                )
-        except Exception as e:
-            return QueryResult(
-                query_type=QueryType.GENERAL_CHAT,
-                response=f"Error: {str(e)}",
-                agent_used="assistant",
-                thinking_steps=thinking_steps,
-                success=False,
-                error=str(e)
-            )
             else:
                 return QueryResult(
                     query_type=QueryType.GENERAL_CHAT,
