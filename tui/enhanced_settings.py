@@ -717,11 +717,24 @@ class EnhancedSettings(ModalScreen[None]):
             success = self.provider_manager.switch_provider(provider_select.value)
             if success:
                 self.notify(f"Switched to {provider_select.value}/{final_model}", severity="information")
+            
+            # Return result to dashboard for processing
+            self.dismiss({
+                "action": "switch_provider",
+                "provider": provider_select.value,
+                "model": final_model
+            })
     
     @on(Button.Pressed, "#test_connection_btn")
     def on_test_connection(self) -> None:
         """Handle test connection button"""
-        self.notify("Connection testing coming soon!", severity="information")
+        # Test connection to provider
+        success = self.provider_manager.test_connection()
+        
+        if success:
+            self.notify(f"Connection successful!", severity="information")
+        else:
+            self.notify(f"Connection failed!", severity="error")
     
     @on(Button.Pressed, "#blip_character_select")
     def on_blip_character_changed(self, event) -> None:

@@ -16,6 +16,9 @@ try:
     from .context_panel import ContextPanel
     from .query_processor import get_query_processor, QueryResult
     from .session_manager import get_session_manager
+    from .enhanced_settings import EnhancedSettings
+    from .model_switcher import ModelSwitcher
+    from .mcp_auto_setup import MCPAutoSetup
     MANAGERS_AVAILABLE = True
 except ImportError:
     try:
@@ -24,9 +27,11 @@ except ImportError:
         from context_panel import ContextPanel
         from query_processor import get_query_processor, QueryResult
         from session_manager import get_session_manager
+        from enhanced_settings import EnhancedSettings
+        from model_switcher import ModelSwitcher
+        from mcp_auto_setup import MCPAutoSetup
         MANAGERS_AVAILABLE = True
-    except ImportError as e:
-        print(f"Import error: {e}")
+    except ImportError:
         MANAGERS_AVAILABLE = False
 
 
@@ -97,6 +102,7 @@ class Dashboard(App):
         ("ctrl+c", "quit", "Quit"),
         ("ctrl+q", "quit", "Quit"),
         ("ctrl+e", "toggle_mode", "Toggle Chat/Editor"),
+        ("ctrl+f", "toggle_file_tree", "Toggle File Tree"),
         ("ctrl+l", "toggle_left_panel", "Toggle Left Panel"),
         ("ctrl+r", "toggle_right_panel", "Toggle Right Panel"),
         ("ctrl+s", "show_settings", "Settings"),
@@ -144,7 +150,11 @@ class Dashboard(App):
             pass
         
         # Update Blip state
-        self._update_blip_state("idle", "Awaiting input")
+        try:
+            blip_panel = self.query_one("#left_panel", BlipPanel)
+            blip_panel.update_status(state, message)
+        except:
+            pass
         
         # Load session data from session_manager
         if self.session_manager and self.session_manager.current_session_data:
@@ -153,99 +163,46 @@ class Dashboard(App):
             # Update context panel with session info
             self._update_session_data(session_data)
             
+            # Load chat history from previous session
+            self._load_chat_history()
+            
+            # Check and show session selector if multiple sessions exist
+            self._check_and_show_session_selector()
+            
             # Initialize context usage
-            context_usage = session_data.get("context_usage", {})
-            self._update_context_usage(
-                tokens_used=context_usage.get("total_tokens", 0),
-                max_tokens=context_usage.get("context_window", 128000)
-            )
             
-            # Initialize provider/model display
-            self._update_provider_info(
-                provider=session_data.get("provider", "openrouter"),
-                model=session_data.get("model", "openai/gpt-4")
-            )
+            # Auto-start MCP servers if available
+            try:
+                from .mcp_auto_setup import MCPAutoSetup
+                mcp_setup = MCPAutoSetup()
             
-            # Initialize modified files list
-            files_edited = session_data.get("files_edited", [])
-            if files_edited:
-                self._update_modified_files([f["file_path"] for f in files_edited])
-            
-            # Start context update timer (every 50 seconds)
-            self.context_update_timer = self.set_timer(50.0, self._update_context_from_session)
+            # Check and show session selector if multiple sessions exist
+    
+    def _load_chat_history(self):
+        """Load previous session chat history into UI"""
+        if not self.session_manager or not self.session_manager.current_session_data:
+            return
         
-        # Handle first prompt if provided
-        if self.first_prompt:
-            self._handle_first_prompt()
+        chat_history = self.session_manager.current_session_data.get("chat_history", [])
+        if not chat_history:
+            return
         
-        # Handle first prompt if provided
-        if self.first_prompt:
-            self._handle_first_prompt()
-    
-    def _update_blip_state(self, state: str, message: str):
-        """Update Blip state and status message"""
         try:
-            blip_panel = self.query_one("#left_panel", BlipPanel)
-            blip_panel.update_status(state, message)
-        except:
-            pass
-    
-    def _update_session_data(self, data: Dict):
-        """Update all panels with session data"""
-        try:
-            context_panel = self.query_one("#right_panel", ContextPanel)
-            context_panel.update_session(data)
-        except:
-            pass
-    
-    def _update_context_usage(self, tokens_used: int, max_tokens: int):
-        """Update context usage in context panel"""
-        try:
-            context_panel = self.query_one("#right_panel", ContextPanel)
-            context_panel.update_context_usage(tokens_used, max_tokens)
-        except:
-            pass
-    
-    def _update_provider_info(self, provider: str, model: str):
-        """Update provider/model info in context panel"""
-        try:
-            context_panel = self.query_one("#right_panel", ContextPanel)
-            context_panel.update_provider(provider, model)
-        except:
-            pass
-    
-    def _update_modified_files(self, files: list):
-        """Update modified files in context panel"""
-        try:
-            context_panel = self.query_one("#right_panel", ContextPanel)
-            for file_path in files:
-                context_panel.add_modified_file(file_path)
-        except:
-            pass
-    
-    def _update_context_from_session(self):
-        """Update context panel from session data (called every 50s)"""
-        if self.session_manager and self.session_manager.current_session_data:
-            session_data = self.session_manager.current_session_data
+            work_panel = self.query_one("#center_panel", WorkPanel)
+            chat_view = work_panel.get_chat_view()
             
-            # Update context usage
-            context_usage = session_data.get("context_usage", {})
-            self._update_context_usage(
-                tokens_used=context_usage.get("total_tokens", 0),
-                max_tokens=context_usage.get("context_window", 128000)
-            )
-            
-            # Update cost
-            cost_data = session_data.get("cost", {})
-            if cost_data:
-                try:
-                    context_panel = self.query_one("#right_panel", ContextPanel)
-                    context_panel.update_cost(cost_data.get("total_usd", 0.0))
-                except:
-                    pass
-            
-            # Restart timer
-            self.context_update_timer = self.set_timer(50.0, self._update_context_from_session)
+            if chat_view:
+                # Load last 10 messages to avoid overwhelming UI
+                recent_messages = chat_history[-10:]
+                for message in recent_messages:
+                    role = message.get("role", "user")
+                    content = message.get("content", "")
+                    chat_view.add_message(role, content)
+                
+                if chat_history:
+                    self.notify(f"Loaded {len(recent_messages)} messages from session", severity="information")
+        except Exception as e:
+            self.notify(f"Failed to load chat history: {e}", severity="warning")
     
     def _handle_first_prompt(self):
         """Handle first prompt if provided"""
@@ -306,6 +263,13 @@ class Dashboard(App):
     
     def _on_query_complete(self, result: QueryResult):
         """Handle query completion"""
+        # Save chat history
+        if self.session_manager and self.query_processor:
+            self.session_manager.update_chat_history("user", self.first_prompt or self._last_query)
+            if result.response:
+                self.session_manager.update_chat_history("assistant", result.response)
+            self.session_manager.save_session()
+        
         # Update Blip
         if result.success:
             self._update_blip_state("happy", "Task complete!")
@@ -355,6 +319,17 @@ class Dashboard(App):
                 left_panel.add_class("hidden")
                 self.notify("Left panel: Hidden")
     
+    def action_toggle_file_tree(self) -> None:
+        """Toggle file tree visibility in chat mode"""
+        try:
+            work_panel = self.query_one("#center_panel", WorkPanel)
+            work_panel.toggle_file_tree()
+            
+            status = "shown" if work_panel.show_file_tree else "hidden"
+            self.notify(f"File tree: {status}", severity="information")
+        except:
+            pass
+    
     def action_toggle_right_panel(self) -> None:
         """Toggle right panel visibility"""
         self.right_visible = not self.right_visible
@@ -370,11 +345,60 @@ class Dashboard(App):
     
     def action_show_settings(self) -> None:
         """Show settings modal"""
-        self.notify("Settings modal coming soon!", severity="information")
+        if MANAGERS_AVAILABLE:
+            try:
+                settings_screen = EnhancedSettings()
+                
+                # Handle settings result when dismissed
+                def handle_settings_result(result: Optional[Dict[str, Any]]):
+                    if result:
+                        action = result.get("action", "")
+                        
+                        if action == "switch_provider":
+                            # Provider switch handled by settings modal
+                            pass
+                        elif action == "switch_model":
+                            # Model switch handled by settings modal
+                            pass
+                        elif action == "theme":
+                            # Apply theme to dashboard
+                            theme = result.get("theme", "dark")
+                            self.apply_theme(theme)
+                            self.notify(f"Theme changed to {theme}", severity="information")
+                
+                self.push_screen(settings_screen, handle_settings_result)
+            except Exception as e:
+                self.notify(f"Error opening settings: {e}", severity="error")
+        else:
+            self.notify("Settings module not available", severity="warning")
     
     def action_show_model_switcher(self) -> None:
         """Show model switcher modal"""
-        self.notify("Model switcher coming soon!", severity="information")
+        if MANAGERS_AVAILABLE:
+            try:
+                model_switcher = ModelSwitcher()
+                
+                def handle_result(result):
+                    if result:
+                        provider = result.get("provider", "")
+                        model = result.get("model", "")
+                        if provider and model:
+                            self.notify(f"Switched to {provider}/{model}", severity="information")
+                            
+                            # Update session data
+                            if self.session_manager:
+                                self.session_manager.current_session_data["provider"] = provider
+                                self.session_manager.current_session_data["model"] = model
+                                self.session_manager.save_session()
+                            
+                            # Update context panel
+                            self._update_session_data(self.session_manager.current_session_data)
+                
+                self.push_screen(model_switcher, handle_result)
+            except Exception as e:
+                self.notify(f"Error opening model switcher: {e}", severity="error")
+        else:
+            self.notify("Model switcher not available", severity="warning")
     
     def action_show_help(self) -> None:
         """Show help"""

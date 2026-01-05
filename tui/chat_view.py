@@ -133,7 +133,7 @@ class ChatView(Vertical):
         self.chat_input.focus()
     
     def add_message(self, role: str, content: str):
-        """Add message to chat"""
+        """Add message to chat with enhanced markdown rendering"""
         timestamp = datetime.now().strftime("%H:%M:%S")
         role_colors = {
             "user": "bold green",
@@ -145,8 +145,43 @@ class ChatView(Vertical):
         color = role_colors.get(role, "white")
         prefix = f"[{color}]{role.upper()}[/{color}] [dim]{timestamp}[/dim]"
         
-        self.chat_log.write(f"{prefix}: {content}")
-        self.messages.append({"role": role, "content": content, "timestamp": timestamp})
+        # Enhanced markdown processing for assistant responses
+        enhanced_content = content
+        if role == "assistant":
+            enhanced_content = self._enhance_markdown(content)
+        
+        self.chat_log.write(f"{prefix}\n{enhanced_content}")
+        self.messages.append({"role": role, "content": enhanced_content, "timestamp": timestamp})
+    
+    def _enhance_markdown(self, content: str) -> str:
+        """Enhance markdown with basic syntax highlighting"""
+        import re
+        
+        # Code blocks with syntax highlighting
+        content = re.sub(
+            r'```(\w+)?\n(.*?)\n```',
+            r'[bold cyan]Code Block (\1):[/bold cyan]\n[dim cyan]\2[/dim cyan]',
+            content,
+            flags=re.DOTALL
+        )
+        
+        # Inline code
+        content = re.sub(r'`([^`]+)`', r'[bold #58A6FF]\1[/bold #58A6FF]', content)
+        
+        # Headers
+        content = re.sub(r'^### (.+)$', r'[bold #58A6FF]### \1[/bold #58A6FF]', content, flags=re.MULTILINE)
+        content = re.sub(r'^## (.+)$', r'[bold #FF6B6B]## \1[/bold #FF6B6B]', content, flags=re.MULTILINE)
+        content = re.sub(r'^# (.+)$', r'[bold #FFA500]# \1[/bold #FFA500]', content, flags=re.MULTILINE)
+        
+        # Bold/italic
+        content = re.sub(r'\*\*(.+?)\*\*', r'[bold]\1[/bold]', content)
+        content = re.sub(r'\*(.+?)\*', r'[italic]\1[/italic]', content)
+        
+        # Lists
+        content = re.sub(r'^- (.+)$', r'[cyan]- \1[/cyan]', content, flags=re.MULTILINE)
+        content = re.sub(r'^\* (.+)$', r'[cyan]* \1[/cyan]', content, flags=re.MULTILINE)
+        
+        return content
     
     def add_agent_thinking(self, thinking: str):
         """Add agent thinking block"""
