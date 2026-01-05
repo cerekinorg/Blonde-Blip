@@ -67,7 +67,6 @@ class Dashboard(App):
         background: #0D1117;
         border: solid #1E2A38;
         height: 100%;
-        flex: 1;
     }
     
     /* Right Panel - Context */
