@@ -88,11 +88,6 @@ class Dashboard(App):
         border-title-color: #8B949E;
         border-title-style: bold;
     }
-    
-    /* Animations */
-    * {
-        animation: none;
-    }
     """
     
     BINDINGS = [
