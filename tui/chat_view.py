@@ -100,8 +100,8 @@ class ChatView(Vertical):
     
     border_title = "CHAT"
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.messages: List[ChatMessage] = []
         self.chat_log = None
         self.chat_input = None

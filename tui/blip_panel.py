@@ -31,8 +31,8 @@ class BlipSprite(Static):
     target_position = reactive("middle")
     animation_timer = None
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.blip_manager = None
         self.current_art = ""
         

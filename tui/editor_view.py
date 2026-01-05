@@ -12,8 +12,8 @@ from pathlib import Path
 class EditorHeader(Static):
     """Editor header showing current mode"""
     
-    def __init__(self):
-        super().__init__("Mode: EDITOR | Ctrl+E → Chat")
+    def __init__(self, **kwargs):
+        super().__init__("Mode: EDITOR | Ctrl+E → Chat", **kwargs)
     
     def render(self):
         """Render header"""
@@ -25,8 +25,8 @@ class FileTreePane(Vertical):
     
     border_title = "Files"
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.file_tree = None
     
     def compose(self):
@@ -44,8 +44,8 @@ class EditorPane(Vertical):
     border_title = "Editor"
     current_file = reactive("")
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.code_buffer = None
         self.line_numbers = None
         self.diff_display = None
@@ -107,8 +107,8 @@ class EditorPane(Vertical):
 class EditorView(Horizontal):
     """Editor view with file tree and editor pane"""
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.file_tree_pane = None
         self.editor_pane = None
     
