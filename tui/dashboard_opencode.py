@@ -123,18 +123,11 @@ class Dashboard(App):
     
     def compose(self) -> ComposeResult:
         """Compose 3-column layout"""
-        with Horizontal():
-            # Left Panel - Blip (collapsible)
-            with BlipPanel(id="left_panel") as left_panel:
-                self.left_panel_ref = left_panel
-            
-            # Center Panel - Work (expandable)
-            with WorkPanel(id="center_panel") as center_panel:
-                self.center_panel_ref = center_panel
-            
-            # Right Panel - Context (collapsible)
-            with ContextPanel(id="right_panel") as right_panel:
-                self.right_panel_ref = right_panel
+        yield Horizontal(
+            BlipPanel(id="left_panel"),
+            WorkPanel(id="center_panel"),
+            ContextPanel(id="right_panel")
+        )
     
     def on_mount(self) -> None:
         """Initialize on mount"""
