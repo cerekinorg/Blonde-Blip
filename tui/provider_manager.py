@@ -65,35 +65,47 @@ class ProviderManager:
             json.dump(config_data, f, indent=2)
     
     def _register_default_providers(self):
-        """Register default providers from environment variables"""
+        """Register default providers from environment variables or keyring"""
+        # Try to load from keyring
+        def get_api_key_from_keyring(provider_name):
+            try:
+                import keyring
+                key = keyring.get_password("blonde-cli", f"{provider_name.upper()}_API_KEY")
+                return key if key else ""
+            except:
+                return ""
+        
         # OpenRouter
-        if os.getenv("OPENROUTER_API_KEY") and "openrouter" not in self.providers:
+        openrouter_key = os.getenv("OPENROUTER_API_KEY") or get_api_key_from_keyring("openrouter")
+        if openrouter_key and "openrouter" not in self.providers:
             self.providers["openrouter"] = ProviderConfig(
                 name="openrouter",
                 provider_type="openrouter",
-                api_key=os.getenv("OPENROUTER_API_KEY", ""),
+                api_key=openrouter_key,
                 model=os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free"),
                 api_url=os.getenv("OPENROUTER_API_URL", "https://openrouter.ai/api/v1/chat/completions"),
                 priority=1
             )
         
         # OpenAI
-        if os.getenv("OPENAI_API_KEY") and "openai" not in self.providers:
+        openai_key = os.getenv("OPENAI_API_KEY") or get_api_key_from_keyring("openai")
+        if openai_key and "openai" not in self.providers:
             self.providers["openai"] = ProviderConfig(
                 name="openai",
                 provider_type="openai",
-                api_key=os.getenv("OPENAI_API_KEY", ""),
+                api_key=openai_key,
                 model=os.getenv("OPENAI_MODEL", "gpt-4"),
                 api_url="https://api.openai.com/v1/chat/completions",
                 priority=2
             )
         
         # Anthropic
-        if os.getenv("ANTHROPIC_API_KEY") and "anthropic" not in self.providers:
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY") or get_api_key_from_keyring("anthropic")
+        if anthropic_key and "anthropic" not in self.providers:
             self.providers["anthropic"] = ProviderConfig(
                 name="anthropic",
                 provider_type="anthropic",
-                api_key=os.getenv("ANTHROPIC_API_KEY", ""),
+                api_key=anthropic_key,
                 model=os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229"),
                 api_url="https://api.anthropic.com/v1/messages",
                 priority=3

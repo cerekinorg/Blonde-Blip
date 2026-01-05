@@ -96,6 +96,19 @@ class QueryProcessor:
         try:
             # Get LLM adapter from provider manager
             if self.provider_manager:
+                # Load provider and model from session data
+                if self.session_manager and self.session_manager.current_session_data:
+                    provider = self.session_manager.current_session_data.get("provider", "")
+                    model = self.session_manager.current_session_data.get("model", "")
+                    
+                    if provider:
+                        # Switch to the provider from session
+                        if provider in self.provider_manager.providers:
+                            self.provider_manager.current_provider = provider
+                            # Update the model if provided
+                            if model:
+                                self.provider_manager.providers[provider].model = model
+                
                 llm_adapter = self.provider_manager.get_adapter()
             else:
                 print("Warning: No provider manager available")
