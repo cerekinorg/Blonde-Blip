@@ -1,5 +1,5 @@
 """
-EditorView - Center panel editor mode with file tree and buffer
+Fixed EditorView - Center panel editor mode with file tree and buffer
 """
 
 from textual.containers import Horizontal, Vertical
@@ -113,25 +113,36 @@ class EditorView(Horizontal):
         self.editor_pane = None
     
     def compose(self):
-        """Compose editor view"""
-        # Header
+        """Compose editor view - FIXED VERSION"""
+        # Header (first child)
         yield EditorHeader(id="editor_header")
         
-        # File tree and editor side by side
-        with Horizontal(id="editor_split"):
-            yield FileTreePane()
-            yield EditorPane()
+        # Main content container
+        container = Horizontal(id="editor_split")
+        file_tree_pane = FileTreePane()
+        editor_pane = EditorPane()
+        
+        # Add children to container
+        container._add_child(file_tree_pane)
+        container._add_child(editor_pane)
+        
+        yield container
     
     def on_mount(self):
         """Initialize on mount"""
-        self.file_tree_pane = self.query_one(FileTreePane)
-        self.editor_pane = self.query_one(EditorPane)
+        # Find the editor split container
+        try:
+            editor_split = self.query_one("#editor_split", Horizontal)
+            self.file_tree_pane = editor_split.children[0] if len(editor_split.children) > 0 else None
+            self.editor_pane = editor_split.children[1] if len(editor_split.children) > 1 else None
+        except Exception as e:
+            print(f"Error mounting editor: {e}")
     
     @on(DirectoryTree.FileSelected)
     def on_file_selected(self, event: DirectoryTree.FileSelected):
         """Handle file selection"""
         path = Path(event.path)
-        if path.is_file():
+        if path.is_file() and self.editor_pane:
             self.editor_pane.load_file(path)
 
 

@@ -51,6 +51,7 @@ class Dashboard(App):
         background: #0E1621;
         border: solid #1E2A38;
         width: 24;
+        height: 100%;
     }
     
     BlipPanel.hidden {
@@ -65,6 +66,8 @@ class Dashboard(App):
     WorkPanel {
         background: #0D1117;
         border: solid #1E2A38;
+        height: 100%;
+        flex: 1;
     }
     
     /* Right Panel - Context */
@@ -72,6 +75,7 @@ class Dashboard(App):
         background: #0B0F14;
         border: solid #1E2A38;
         width: 32;
+        height: 100%;
     }
     
     ContextPanel.hidden {
@@ -123,11 +127,9 @@ class Dashboard(App):
     
     def compose(self) -> ComposeResult:
         """Compose 3-column layout"""
-        yield Horizontal(
-            BlipPanel(id="left_panel"),
-            WorkPanel(id="center_panel"),
-            ContextPanel(id="right_panel")
-        )
+        yield BlipPanel(id="left_panel")
+        yield WorkPanel(id="center_panel")
+        yield ContextPanel(id="right_panel")
     
     def on_mount(self) -> None:
         """Initialize on mount"""
