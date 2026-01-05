@@ -43,6 +43,33 @@ class BlipSprite(Static):
         if MANAGERS_AVAILABLE:
             self.blip_manager = get_blip_manager()
     
+    def on_mount(self):
+        """Initialize on mount"""
+        self._update_art()
+    
+    def _update_art(self):
+        """Update Blip ASCII art based on current position"""
+        if not self.blip_manager or not self.blip_manager.current_character:
+            return
+        
+        # Map position to state
+        position_to_state = {
+            "top": "idle",
+            "middle": "thinking",
+            "bottom": "error"
+        }
+        
+        state = position_to_state.get(self.vertical_position, "idle")
+        art = self.blip_manager.current_character.get_art(state)
+        color = self.blip_manager.current_character.get_color(state)
+        
+        # Update display with colored art
+        self.update(f"[{color}]{art}[/{color}]")
+    
+    def watch_vertical_position(self, old_pos, new_pos):
+        """Update Blip art based on position"""
+        self._update_art()
+    
     def animate_to_position(self, target_pos: str):
         """Gradually animate to target position"""
         self.target_position = target_pos
@@ -87,57 +114,6 @@ class BlipSprite(Static):
         # Already at target position
         else:
             self.animation_timer = None
-    
-    def watch_vertical_position(self, old_pos, new_pos):
-        """Update Blip art based on position"""
-        self._update_art()
-    
-    def animate_to_position(self, target_pos: str):
-        """Gradually animate to target position"""
-        self.target_position = target_pos
-        
-        # Cancel existing animation
-        if self.animation_timer and self.animation_timer.is_alive:
-            self.animation_timer.cancel()
-        
-        # Start animation
-        self.animation_step_index = 0
-        self.animation_timer = self.set_timer(0.3, self._animate_step)
-    
-    def _animate_step(self):
-        """Single animation step - move one position toward target"""
-        target_idx = self.animation_positions.index(self.target_position)
-        current_idx = self.animation_positions.index(self.vertical_position)
-        
-        if current_idx < target_idx:
-            # Move down one step
-            next_idx = min(current_idx + 1, target_idx)
-            self.vertical_position = self.animation_positions[next_idx]
-            
-            # Continue animation if not at target
-            if self.vertical_position != self.target_position:
-                self.animation_step_index += 1
-                self.animation_timer = self.set_timer(0.3, self._animate_step)
-            else:
-                self.animation_timer = None
-        elif current_idx > target_idx:
-            # Move up one step
-            next_idx = max(current_idx - 1, target_idx)
-            self.vertical_position = self.animation_positions[next_idx]
-            
-            # Continue animation if not at target
-            if self.vertical_position != self.target_position:
-                self.animation_step_index += 1
-                self.animation_timer = self.set_timer(0.3, self._animate_step)
-            else:
-                self.animation_timer = None
-        # Already at target position
-        else:
-            self.animation_timer = None
-    
-    def on_mount(self):
-        """Initialize on mount"""
-        self._update_art()
     
     def set_state(self, state: str):
         """Set Blip state (idle, working, error, thinking, happy)"""
@@ -235,23 +211,6 @@ class BlipPanel(Vertical):
         # Trigger animation via BlipSprite
         if self.blip_sprite:
             self.blip_sprite.animate_to_position(target_pos)
-        
-        # Map state to position
-        state_to_position = {
-            "idle": "top",
-            "happy": "top",
-            "excited": "top",
-            "thinking": "middle",
-            "working": "middle",
-            "confused": "middle",
-            "error": "bottom",
-            "sad": "bottom",
-            "surprised": "top"
-        }
-        target_pos = state_to_position.get(state, "middle")
-        
-        # Trigger gradual animation
-        self.animate_to_position(target_pos)
     
     def set_editor_mode(self, enabled: bool):
         """Enable/disable editor mode (shows mini file tree)"""
