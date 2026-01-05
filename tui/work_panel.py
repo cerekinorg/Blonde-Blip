@@ -22,8 +22,8 @@ class WorkPanel(Vertical):
     border_title = "Workspace"
     current_mode = reactive("chat")  # chat, editor
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.chat_view = None
         self.editor_view = None
         self.current_child = None

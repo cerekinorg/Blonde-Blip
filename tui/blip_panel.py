@@ -172,8 +172,8 @@ class BlipPanel(Vertical):
     status_message = reactive("Awaiting input")
     editor_mode = reactive(False)
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.blip_sprite = None
         self.status_text = None
         self.mini_file_tree = None

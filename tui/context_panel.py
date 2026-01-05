@@ -269,8 +269,8 @@ class ContextPanel(Vertical):
     
     border_title = "Context"
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.session_info = None
         self.context_usage = None
         self.modified_files = None
