@@ -35,7 +35,7 @@ def main():
     
     # Launch main application (welcome screen → dashboard)
     from tui.welcome_screen import WelcomeScreen
-    from tui.dashboard import Dashboard
+    from tui.dashboard_opencode import Dashboard
     
     # Run welcome screen and get session data
     welcome_app = WelcomeScreen()
