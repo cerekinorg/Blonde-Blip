@@ -14,20 +14,19 @@ try:
     from .blip_panel import BlipPanel
     from .work_panel import WorkPanel
     from .context_panel import ContextPanel
-    from .session_manager import get_session_manager
-    from .blip_manager import get_blip_manager
     from .query_processor import get_query_processor, QueryResult
+    from .session_manager import get_session_manager
     MANAGERS_AVAILABLE = True
 except ImportError:
     try:
         from blip_panel import BlipPanel
         from work_panel import WorkPanel
         from context_panel import ContextPanel
-        from session_manager import get_session_manager
-        from blip_manager import get_blip_manager
         from query_processor import get_query_processor, QueryResult
+        from session_manager import get_session_manager
         MANAGERS_AVAILABLE = True
-    except ImportError:
+    except ImportError as e:
+        print(f"Import error: {e}")
         MANAGERS_AVAILABLE = False
 
 
@@ -66,7 +65,6 @@ class Dashboard(App):
     WorkPanel {
         background: #0D1117;
         border: solid #1E2A38;
-        flex: 1;
     }
     
     /* Right Panel - Context */
@@ -78,18 +76,6 @@ class Dashboard(App):
     
     ContextPanel.hidden {
         display: none;
-    }
-    
-    /* Color Variables */
-    :root {
-        background: #0D1117;
-        foreground: #C9D1D9;
-        muted: #8B949E;
-        border: #1E2A38;
-        accent: #58A6FF;
-        success: #3FB950;
-        danger: #F85149;
-        warning: #D29922;
     }
     
     /* Typography */
@@ -129,15 +115,14 @@ class Dashboard(App):
         self.first_prompt = first_prompt
         
         # Initialize managers
-        self.session_manager = None
-        self.blip_manager = None
         self.query_processor = None
+        self.session_manager = None
+        self.context_update_timer = None
         
         if MANAGERS_AVAILABLE:
             try:
-                self.session_manager = get_session_manager()
-                self.blip_manager = get_blip_manager()
                 self.query_processor = get_query_processor()
+                self.session_manager = get_session_manager()
             except Exception as e:
                 print(f"Error initializing managers: {e}")
     
@@ -170,12 +155,39 @@ class Dashboard(App):
             pass
         
         # Update Blip state
-        if self.blip_manager:
-            self._update_blip_state("idle", "Awaiting input")
+        self._update_blip_state("idle", "Awaiting input")
         
-        # Load session data
+        # Load session data from session_manager
         if self.session_manager and self.session_manager.current_session_data:
-            self._update_session_data(self.session_manager.current_session_data)
+            session_data = self.session_manager.current_session_data
+            
+            # Update context panel with session info
+            self._update_session_data(session_data)
+            
+            # Initialize context usage
+            context_usage = session_data.get("context_usage", {})
+            self._update_context_usage(
+                tokens_used=context_usage.get("total_tokens", 0),
+                max_tokens=context_usage.get("context_window", 128000)
+            )
+            
+            # Initialize provider/model display
+            self._update_provider_info(
+                provider=session_data.get("provider", "openrouter"),
+                model=session_data.get("model", "openai/gpt-4")
+            )
+            
+            # Initialize modified files list
+            files_edited = session_data.get("files_edited", [])
+            if files_edited:
+                self._update_modified_files([f["file_path"] for f in files_edited])
+            
+            # Start context update timer (every 50 seconds)
+            self.context_update_timer = self.set_timer(50.0, self._update_context_from_session)
+        
+        # Handle first prompt if provided
+        if self.first_prompt:
+            self._handle_first_prompt()
         
         # Handle first prompt if provided
         if self.first_prompt:
@@ -196,6 +208,55 @@ class Dashboard(App):
             context_panel.update_session(data)
         except:
             pass
+    
+    def _update_context_usage(self, tokens_used: int, max_tokens: int):
+        """Update context usage in context panel"""
+        try:
+            context_panel = self.query_one("#right_panel", ContextPanel)
+            context_panel.update_context_usage(tokens_used, max_tokens)
+        except:
+            pass
+    
+    def _update_provider_info(self, provider: str, model: str):
+        """Update provider/model info in context panel"""
+        try:
+            context_panel = self.query_one("#right_panel", ContextPanel)
+            context_panel.update_provider(provider, model)
+        except:
+            pass
+    
+    def _update_modified_files(self, files: list):
+        """Update modified files in context panel"""
+        try:
+            context_panel = self.query_one("#right_panel", ContextPanel)
+            for file_path in files:
+                context_panel.add_modified_file(file_path)
+        except:
+            pass
+    
+    def _update_context_from_session(self):
+        """Update context panel from session data (called every 50s)"""
+        if self.session_manager and self.session_manager.current_session_data:
+            session_data = self.session_manager.current_session_data
+            
+            # Update context usage
+            context_usage = session_data.get("context_usage", {})
+            self._update_context_usage(
+                tokens_used=context_usage.get("total_tokens", 0),
+                max_tokens=context_usage.get("context_window", 128000)
+            )
+            
+            # Update cost
+            cost_data = session_data.get("cost", {})
+            if cost_data:
+                try:
+                    context_panel = self.query_one("#right_panel", ContextPanel)
+                    context_panel.update_cost(cost_data.get("total_usd", 0.0))
+                except:
+                    pass
+            
+            # Restart timer
+            self.context_update_timer = self.set_timer(50.0, self._update_context_from_session)
     
     def _handle_first_prompt(self):
         """Handle first prompt if provided"""

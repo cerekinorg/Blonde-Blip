@@ -19,6 +19,8 @@ try:
     from .dev_team import DevelopmentTeam, AgentTask
     from .optimizer_agent import OptimizerAgent
     from .provider_manager import ProviderManager
+    from .session_manager import get_session_manager
+    from .cost_tracker import get_cost_tracker
     MANAGERS_AVAILABLE = True
 except ImportError:
     try:
@@ -30,6 +32,8 @@ except ImportError:
         from dev_team import DevelopmentTeam, AgentTask
         from optimizer_agent import OptimizerAgent
         from provider_manager import ProviderManager
+        from session_manager import get_session_manager
+        from cost_tracker import get_cost_tracker
         MANAGERS_AVAILABLE = True
     except ImportError:
         MANAGERS_AVAILABLE = False
@@ -76,23 +80,45 @@ class QueryProcessor:
         self.provider_manager = None
         self.development_team = None
         self.optimizer = None
+        self.session_manager = None
         
         if MANAGERS_AVAILABLE:
             self.provider_manager = ProviderManager()
+            try:
+                from .session_manager import get_session_manager
+                self.session_manager = get_session_manager()
+            except:
+                pass
             self._init_agents()
     
     def _init_agents(self):
-        """Initialize the development team and agents"""
+        """Initialize development team, session manager, and cost tracker"""
         try:
             # Get LLM adapter from provider manager
-            llm_adapter = self.provider_manager.get_llm_adapter()
+            if self.provider_manager:
+                llm_adapter = self.provider_manager.get_adapter()
+            else:
+                print("Warning: No provider manager available")
+                llm_adapter = None
+            
+            # Initialize session manager
+            self.session_manager = None
+            try:
+                self.session_manager = get_session_manager()
+            except:
+                pass
+            
+            # Initialize cost tracker
+            self.cost_tracker = None
+            try:
+                self.cost_tracker = get_cost_tracker()
+            except:
+                pass
             
             # Create development team
-            self.development_team = DevelopmentTeam(llm_adapter)
-            
-            # Create optimizer
-            self.optimizer = OptimizerAgent(llm_adapter)
-            
+            if llm_adapter:
+                self.development_team = DevelopmentTeam(llm_adapter)
+                self.optimizer = OptimizerAgent(llm_adapter)
         except Exception as e:
             print(f"Error initializing agents: {e}")
     
@@ -872,6 +898,8 @@ class QueryProcessor:
         context: Dict[str, Any],
         progress_callback
     ) -> QueryResult:
+
+            files_modified=files_modified,\n
         """Handle general chat queries"""
         thinking_steps = [
             "Processing general query",
@@ -881,7 +909,7 @@ class QueryProcessor:
         try:
             # Use the LLM directly for general chat
             if self.provider_manager:
-                llm_adapter = self.provider_manager.get_llm_adapter()
+                llm_adapter = self.provider_manager.get_adapter()
                 
                 if progress_callback:
                     progress_callback("assistant", "Thinking...")
@@ -889,13 +917,59 @@ class QueryProcessor:
                 # Simple chat completion
                 response = llm_adapter.chat(query)
                 
+                # Update session with chat history
+                if self.session_manager:
+                    self.session_manager.update_chat_history("user", query)
+                    self.session_manager.update_chat_history("assistant", response)
+                
+                # Track file modifications (if adapter reports them)
+                files_modified = getattr(llm_adapter, 'files_modified', [])
+                
+                # Track context usage (if adapter supports it)
+                input_tokens = getattr(llm_adapter, 'last_input_tokens', len(query) // 4)
+                output_tokens = getattr(llm_adapter, 'last_output_tokens', len(response) // 4)
+                self.session_manager.update_context_usage(input_tokens, output_tokens)
+                
+                # Calculate and update cost
+                if self.session_manager and self.cost_tracker:
+                    session_data = self.session_manager.current_session_data
+                    if session_data:
+                        provider = session_data.get("provider", "openrouter")
+                        model = session_data.get("model", "openai/gpt-4")
+                        
+                        cost = self.cost_tracker.calculate_cost(
+                            provider=provider,
+                            model=model,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens
+                        )
+                        self.session_manager.update_cost(provider, model, input_tokens, output_tokens, cost)
+                
                 return QueryResult(
                     query_type=QueryType.GENERAL_CHAT,
                     response=response,
                     agent_used="assistant",
                     thinking_steps=thinking_steps,
+                    files_modified=files_modified,
                     success=True
                 )
+            else:
+                return QueryResult(
+                    query_type=QueryType.GENERAL_CHAT,
+                    response="I can help with code generation, review, debugging, testing, refactoring, security analysis, architecture design, documentation, and optimization. What would you like to work on?",
+                    agent_used="assistant",
+                    thinking_steps=thinking_steps,
+                    success=True
+                )
+        except Exception as e:
+            return QueryResult(
+                query_type=QueryType.GENERAL_CHAT,
+                response=f"Error: {str(e)}",
+                agent_used="assistant",
+                thinking_steps=thinking_steps,
+                success=False,
+                error=str(e)
+            )
             else:
                 return QueryResult(
                     query_type=QueryType.GENERAL_CHAT,

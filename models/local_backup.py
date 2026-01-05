@@ -26,8 +26,6 @@ class LocalAdapter:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.model_path = self._download_model()
         self.llm = self._load_model()
-        self.last_input_tokens = 0
-        self.last_output_tokens = 0
         self.last_input_tokens = 0  # Track input tokens
         self.last_output_tokens = 0  # Track output tokens
 
