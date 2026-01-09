@@ -53,7 +53,7 @@ class SimpleWelcomeScreen(App):
         border: solid #30363D;
         background: #0D1117;
         padding: 2;
-        border-subtle: round;
+        border-radius: round;
     }
 
     #input_input {

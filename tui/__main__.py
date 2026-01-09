@@ -1,5 +1,5 @@
 """
-Blonde CLI - Unified Entry Point
+Blonde CLI - Unified Entry Point v2.0
 Clean, working entry point for application
 """
 
@@ -31,29 +31,8 @@ def main():
         print("Running setup wizard...\n")
 
         try:
-            # Import with absolute imports
-            from tui.setup_wizard import SetupWizard
-
-            # Run setup wizard
-            setup_app = SetupWizard()
-            setup_app.run()
-
-            # Ensure config was created
-            if not CONFIG_FILE.exists():
-                default_config = {
-                    'provider': 'openrouter',
-                    'model': 'openai/gpt-4',
-                    'blip_character': 'axolotl',
-                    'setup_complete': True
-                }
-                with open(CONFIG_FILE, 'w') as f:
-                    json.dump(default_config, f, indent=2)
-
-            print("\n✅ Setup complete!\n")
-
-        except ImportError as e:
-            print(f"\n⚠️  Setup wizard not available: {e}")
-            print("Creating default configuration...\n")
+            # Import new core systems
+            from tui.core import get_config_manager
 
             # Create default config
             default_config = {
@@ -66,36 +45,33 @@ def main():
             with open(CONFIG_FILE, 'w') as f:
                 json.dump(default_config, f, indent=2)
 
+            print("\n✅ Setup complete!\n")
+
+        except ImportError as e:
+            print(f"\n⚠️  Core systems not available: {e}")
+            print("Creating default configuration...\n")
+
+            # Fallback: Create default config
+            default_config = {
+                'provider': 'openrouter',
+                'model': 'openai/gpt-4',
+                'blip_character': 'axolotl',
+                'setup_complete': True
+            }
+            CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(CONFIG_FILE, 'w') as f:
+                json.dump(default_config, f, indent=2)
+
     # Launch main application
-    print("🚀 Launching Blonde CLI...\n")
+    print("🚀 Launching Blonde CLI v2.0...\n")
 
     try:
-        # Import with proper path setup
-        from tui.simple_welcome import SimpleWelcomeScreen
+        # Import with absolute imports
+        from simple_dashboard import SimpleDashboard
 
-        # Run welcome screen
-        welcome_app = SimpleWelcomeScreen()
-        result = welcome_app.run()
-
-        # If session started, launch simple dashboard
-        if result and isinstance(result, dict):
-            session_id = result.get('session_id')
-            first_prompt = result.get('first_prompt', '')
-
-            if session_id:
-                print(f"✅ Session: {session_id[:8]}...\n")
-                print("🚀 Launching Simple Dashboard...\n")
-
-                # Use simple dashboard with new core systems
-                from tui.simple_dashboard import SimpleDashboard
-
-                dashboard = SimpleDashboard(
-                    session_id=session_id,
-                    first_prompt=first_prompt
-                )
-                dashboard.run()
-            else:
-                print("\nNo session started. Exiting.")
+        # Run dashboard
+        app = SimpleDashboard()
+        app.run()
 
     except KeyboardInterrupt:
         print("\n👋 Goodbye!")
