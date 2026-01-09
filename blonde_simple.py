@@ -1,15 +1,11 @@
+#!/usr/bin/env python3
 """
-Blonde CLI - Unified Entry Point
-Clean, working entry point for application
+Blonde CLI - Simplified Entry Point
+Clean, minimal entry point that works with existing TUI
 """
 
 from pathlib import Path
 import sys
-import json
-
-# Add project root to Python path for proper imports
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
 
 CONFIG_DIR = Path.home() / ".blonde"
 CONFIG_FILE = CONFIG_DIR / "config.json"
@@ -17,10 +13,10 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 
 def main():
     """
-    Main entry point:
-    1. Check/setup wizard
+    Simplified main entry point:
+    1. Ensure config directory exists
     2. Launch welcome screen
-    3. Run dashboard
+    3. Run dashboard if session started
     """
     # Ensure config directory exists
     CONFIG_DIR.mkdir(exist_ok=True)
@@ -31,31 +27,17 @@ def main():
         print("Running setup wizard...\n")
 
         try:
-            # Import with absolute imports
-            from tui.setup_wizard import SetupWizard
-
-            # Run setup wizard
-            setup_app = SetupWizard()
+            # Try to import and run setup wizard
+            import setup_wizard
+            setup_app = setup_wizard.SetupWizard()
             setup_app.run()
-
-            # Ensure config was created
-            if not CONFIG_FILE.exists():
-                default_config = {
-                    'provider': 'openrouter',
-                    'model': 'openai/gpt-4',
-                    'blip_character': 'axolotl',
-                    'setup_complete': True
-                }
-                with open(CONFIG_FILE, 'w') as f:
-                    json.dump(default_config, f, indent=2)
-
-            print("\n✅ Setup complete!\n")
-
+            print("\n✓ Setup complete!\n")
         except ImportError as e:
             print(f"\n⚠️  Setup wizard not available: {e}")
-            print("Creating default configuration...\n")
+            print("Using default configuration...\n")
 
             # Create default config
+            import json
             default_config = {
                 'provider': 'openrouter',
                 'model': 'openai/gpt-4',
@@ -65,37 +47,35 @@ def main():
             CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
             with open(CONFIG_FILE, 'w') as f:
                 json.dump(default_config, f, indent=2)
-
     # Launch main application
     print("🚀 Launching Blonde CLI...\n")
 
     try:
-        # Import with proper path setup
-        from tui.simple_welcome import SimpleWelcomeScreen
+        # Try to import and run welcome screen
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        import welcome_screen
 
-        # Run welcome screen
-        welcome_app = SimpleWelcomeScreen()
+        welcome_app = welcome_screen.WelcomeScreen()
         result = welcome_app.run()
 
-        # If session started, launch simple dashboard
+        # If session started, try to launch dashboard
         if result and isinstance(result, dict):
             session_id = result.get('session_id')
             first_prompt = result.get('first_prompt', '')
 
-            if session_id:
-                print(f"✅ Session: {session_id[:8]}...\n")
-                print("🚀 Launching Simple Dashboard...\n")
+            print(f"✓ Session: {session_id[:8]}...\n")
 
-                # Use simple dashboard with new core systems
-                from tui.simple_dashboard import SimpleDashboard
-
-                dashboard = SimpleDashboard(
+            try:
+                import dashboard_opencode
+                dashboard = dashboard_opencode.Dashboard(
                     session_id=session_id,
                     first_prompt=first_prompt
                 )
                 dashboard.run()
-            else:
-                print("\nNo session started. Exiting.")
+            except Exception as e:
+                print(f"\n❌ Dashboard error: {e}")
+                import traceback
+                traceback.print_exc()
 
     except KeyboardInterrupt:
         print("\n👋 Goodbye!")

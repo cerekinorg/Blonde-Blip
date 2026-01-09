@@ -1,71 +1,28 @@
-# BlondE-CLI Dependencies
-# Install with: pip install -r requirements.txt
+# Blonde-CLI Essential Dependencies
+# Simplified version - only essential dependencies
 
-# Core CLI framework
+# Core Framework
 typer>=0.9.0
 rich>=13.0.0
-textual>=0.44.0  # Modern TUI framework
-click>=8.0.0  # Required by typer
+textual>=0.44.0
 
-# Configuration & Environment
-pyyaml>=6.0
+# Configuration
 python-dotenv>=1.0.0
+pyyaml>=6.0
 
-# AI/ML Libraries
+# AI/ML
 openai>=1.0.0
 requests>=2.31.0
 tenacity>=8.2.0
 
-# MCP (Model Context Protocol)
-mcp
-
-# Local Model Support (GGUF)
+# Local Models
 llama-cpp-python>=0.2.0
 huggingface-hub>=0.19.0
 
-# Code Analysis
-# tree-sitter>=0.20.0  # Uncomment for multi-language AST support
-# tree-sitter-languages>=1.8.0
-
-# Linting Tools Integration
-pylint>=3.0.0
-flake8>=6.0.0
-ruff>=0.1.0
-
-# Coverage
-coverage>=7.0.0
-
-# Backend Services (Optional)
-fastapi>=0.104.0
-uvicorn[standard]>=0.23.0
-websockets>=12.0
-pydantic>=2.0.0
-
-# File Type Detection
-python-magic>=0.4.27
-# python-magic-bin>=0.4.14  # Windows-only, uncomment on Windows
-
-# Version Control
+# Git Integration (optional but useful)
 GitPython>=3.1.40
 
-# Memory System (Optional but Recommended)
-chromadb>=0.4.0
-
-# Security (API Key Management)
-keyring>=24.0.0
-
-# ===== Optional Dependencies =====
-# Uncomment based on your needs
-
-# GPU Support (NVIDIA CUDA)
-# Install with: CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install llama-cpp-python --force-reinstall
-
-# GPU Support (Mac M1/M2 Metal)
-# Install with: CMAKE_ARGS="-DLLAMA_METAL=on" pip install llama-cpp-python --force-reinstall
-
-# Development Tools
+# Development Tools (install separately if needed)
 # pytest>=7.4.0
-# pytest-cov>=4.1.0
 # black>=23.0.0
 # flake8>=6.0.0
-# mypy>=1.5.0

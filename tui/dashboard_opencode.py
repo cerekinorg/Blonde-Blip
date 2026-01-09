@@ -9,27 +9,42 @@ from textual import on
 from textual.reactive import reactive
 from pathlib import Path
 from typing import Optional, Dict
+import sys
+
+# Add project root to path for core imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import new core systems
+try:
+    from tui.core import (
+        get_config_manager,
+        get_session_manager,
+        get_provider_manager,
+        get_agent_team
+    )
+    CORE_AVAILABLE = True
+except ImportError:
+    try:
+        from core import (
+            get_config_manager,
+            get_session_manager,
+            get_provider_manager,
+            get_agent_team
+        )
+        CORE_AVAILABLE = True
+    except ImportError:
+        CORE_AVAILABLE = False
 
 try:
     from .blip_panel import BlipPanel
     from .work_panel import WorkPanel
     from .context_panel import ContextPanel
-    from .query_processor import get_query_processor, QueryResult
-    from .session_manager import get_session_manager
-    from .enhanced_settings import EnhancedSettings
-    from .model_switcher import ModelSwitcher
-    from .mcp_auto_setup import MCPAutoSetup
     MANAGERS_AVAILABLE = True
 except ImportError:
     try:
         from blip_panel import BlipPanel
         from work_panel import WorkPanel
         from context_panel import ContextPanel
-        from query_processor import get_query_processor, QueryResult
-        from session_manager import get_session_manager
-        from enhanced_settings import EnhancedSettings
-        from model_switcher import ModelSwitcher
-        from mcp_auto_setup import MCPAutoSetup
         MANAGERS_AVAILABLE = True
     except ImportError:
         MANAGERS_AVAILABLE = False
@@ -117,18 +132,22 @@ class Dashboard(App):
         super().__init__()
         self.session_id = session_id
         self.first_prompt = first_prompt
-        
-        # Initialize managers
-        self.query_processor = None
-        self.session_manager = None
+
+        # Initialize new core systems
+        self.config = None
+        self.session_mgr = None
+        self.provider_mgr = None
+        self.agent_team = None
         self.context_update_timer = None
-        
-        if MANAGERS_AVAILABLE:
+
+        if CORE_AVAILABLE:
             try:
-                self.query_processor = get_query_processor()
-                self.session_manager = get_session_manager()
+                self.config = get_config_manager()
+                self.session_mgr = get_session_manager()
+                self.provider_mgr = get_provider_manager()
+                self.agent_team = get_agent_team()
             except Exception as e:
-                print(f"Error initializing managers: {e}")
+                print(f"Error initializing core systems: {e}")
     
     def compose(self) -> ComposeResult:
         """Compose 3-column layout"""
@@ -170,12 +189,7 @@ class Dashboard(App):
             self._check_and_show_session_selector()
             
             # Initialize context usage
-            
-            # Auto-start MCP servers if available
-            try:
-                from .mcp_auto_setup import MCPAutoSetup
-                mcp_setup = MCPAutoSetup()
-            
+
             # Check and show session selector if multiple sessions exist
     
     def _load_chat_history(self):
